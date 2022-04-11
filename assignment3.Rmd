@@ -13,6 +13,8 @@ output:
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = FALSE)
 Sys.setlocale("LC_ALL", "English")
+
+library(tidyverse)  
 ```
 
 
