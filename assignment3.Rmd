@@ -1,5 +1,8 @@
 ---
-title: "SRS Assignment 3"
+title: |
+  <center> University of Edinburgh, School of Mathematics </center>
+  <center> Statistical Research Skills </center>
+  <center> Assignment 3 - Simulation Report</center>
 author: "Johnny Lee"
 date: '2022 4 11 '
 output:
@@ -8,39 +11,8 @@ output:
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = FALSE)
 Sys.setlocale("LC_ALL", "English")
-library(maxLik)
-library(mice)
-library(dplyr)
-library(knitr)
-library(kableExtra)
-library(JointAI)
-library(RColorBrewer)
-require(devtools)
-source_url("https://gist.githubusercontent.com/NErler/0d00375da460dd33839b98faeee2fdab/raw/c6f537ecf80eddcefd94992ec7926aa57d454536/propplot.R")
-
-load("dataex2.Rdata")
-load("dataex4.Rdata")
-load("NHANES2.Rdata")
 ```
 
-## R Markdown
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
-
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
-
-```{r cars}
-summary(cars)
-```
-
-## Including Plots
-
-You can also embed plots, for example:
-
-```{r pressure, echo=FALSE}
-plot(pressure)
-```
-
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
