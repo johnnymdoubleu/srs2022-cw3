@@ -4,10 +4,10 @@ title: |
   <center> Statistical Research Skills </center>
   <center> Assignment 3 - Simulation Report</center>
 author: "Johnny Lee"
-date: '2022 4 11 '
+date: '26th Apr 2022 '
 output:
+  pdf_document : default
   html_document: default
-  pdf_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -16,6 +16,12 @@ Sys.setlocale("LC_ALL", "English")
 
 library(tidyverse)  
 ```
+
+Let $X_1,\dots,X_n\overset{\text{iid}}{\sim}f$. The kernal
+
+$$
+\hat{f}(x)=\frac{1}{n}\sum^{n}_{i=1}K_h(x-X_i)
+$$
 
 
 ```{r}
@@ -28,4 +34,15 @@ for(r in 1:R){
   xbar[r] <- mean(rnorm(n, 10, 1))
 }
 ```
+
+```{r}
+hist(xbar)
+```
+
+One Shot experiment
+
+```{r}
+n <- 100
+```
+
 
