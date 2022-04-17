@@ -20,7 +20,7 @@ library(gss)
 
 # 1. Introduction
 
-In this report, we aim to compute the performance of density function, `density()` also known as the kernel density estimator. In addition to that, we will compare with its other competitors such as Gaussian, uniform and Epanechnikov kernel
+This report consists of two main parts. In the first part, we aim to compute one-shot experiment on density function, `density()` also known as the kernel density estimator. In addition to that, we will compare with its other competitors such as orthogonal series estimator and penalised kernal density estimator. 
 
 # 2. Generating Data
 
@@ -50,7 +50,9 @@ OS_Hermite <- function(x, data){
   # Utilize the recurrence formula "H_n(x) = 2x*H_(n-1)(x) - 2(n-1)*H_(n-2)(x) (n>=2)"
   # to calculate the Hermite polynomials
   hermite <- function(x, m){
-    if(m == 0){1}
+    if(m == 0){
+      1
+    }
     else if(m == 1){2*x}
     else{
       a <- 1
@@ -171,19 +173,15 @@ legend(x = "topright",
 set.seed(1)
 # Initialize some variables
 # R is the times that we repeat the one-shot experiment
-
-mu = 0; sigma = 1
-
-
+mu <- 0;sigam <- 1
 repeat.no <- 10
 n <- c(250, 500, 1000)
 df <- 5
 ise <- list()
-ise$first <- ise$second <- data.frame("kernel" = rep(0, repeat.no), 
+ise$second <- ise$first <- data.frame("kernel" = rep(0, repeat.no), 
                                       "OS" = rep(0, repeat.no),
                                       "pkd" = rep(0, repeat.no))
 ise$third <- ise$first
-set.seed(1)
 
 # The density function of the distribution of the sample
 density_sam = function(x, df){
@@ -202,15 +200,19 @@ for(i in 1:repeat.no){
   xx <- (ker_den$x[-1] + ker_den$x[-length(ker_den$x)])/2
   yy <- (ker_den$y[-1] + ker_den$y[-length(ker_den$y)])/2
   ise$first$kernel[i] <- sum((yy - density_sam1(xx))^2*interval)
-  # The calculation of the ISE for the penalised kernaldensity estimator
-  ise$first$OS[i] = integrate(function(x){
+  # The calculation of the ISE for the penalised kernal density estimator
+  ise$first$OS[i] <- integrate(function(x){
     (OS_Hermite(x, data = sample1) - density_sam1(x))^2},
-    lower = -Inf, upper = Inf, subdivisions = 10^6)$value  
-  pen.ker.den <- dssden(sample.fit, seq(min(sample1),max(sample1),len=n[1]))
-  interval <- sample1[-1] - sample1[-length(sample1)]
-  xx <- (sample1[-1] + sample1[-length(sample1)])/2
-  yy <- (pen.ker.den[-1] + pen.ker.den[-length(pen.ker.den)])/2
-  ise$first$pkd[i] <- sum((yy - density_sam1(xx))^2*interval)
+    lower = min(sample1), upper = max(sample1))$value 
+  
+  # pen.ker.den <- dssden(sample.fit, seq(min(sample1),max(sample1),len=n[1]))
+  ise$first$pkd[i] <- integrate(function(sample1){
+    (dssden(sample.fit, sample1) - dnorm(sample1, mean = 0, sd = 1))^2}, 
+    lower = min(sample1), upper = max(sample1))$value
+  # interval <- sample1[-1] - sample1[-length(sample1)]
+  # xx <- (sample1[-1] + sample1[-length(sample1)])/2
+  # yy <- (pen.ker.den[-1] + pen.ker.den[-length(pen.ker.den)])/2
+  # ise$first$pkd[i] <- sum((yy - density_sam1(xx))^2*interval)
   # ISE$first$hist[i] <- integrate(function(x){
   #   (dssden(sample.fit, ) - density_sam1(x))^2},
   #   lower = -Inf, upper = Inf, subdivisions = 10^6)$value
@@ -230,12 +232,10 @@ for(i in 1:repeat.no){
   # The calculation of the ISE for the penalised kernaldensity estimator
   ise$second$OS[i] = integrate(function(x){
     (OS_Hermite(x, data = sample1) - density_sam1(x))^2},
-    lower = -Inf, upper = Inf, subdivisions = 10^6)$value  
-  pen.ker.den <- dssden(sample.fit, seq(min(sample1),max(sample1),len=n[2]))
-  interval <- sample1[-1] - sample1[-length(sample1)]
-  xx <- (sample1[-1] + sample1[-length(sample1)])/2
-  yy <- (pen.ker.den[-1] + pen.ker.den[-length(pen.ker.den)])/2
-  ise$second$pkd[i] <- sum((yy - density_sam1(xx))^2*interval)
+    lower = min(sample1), upper = max(sample1))$value  
+  ise$second$pkd[i] <- integrate(function(sample1){
+    (dssden(sample.fit, sample1) - dnorm(sample1, mean = 0, sd = 1))^2}, 
+    lower = min(sample1), upper = max(sample1))$value
   # ISE$first$hist[i] <- integrate(function(x){
   #   (dssden(sample.fit, ) - density_sam1(x))^2},
   #   lower = -Inf, upper = Inf, subdivisions = 10^6)$value
@@ -253,47 +253,35 @@ for(i in 1:repeat.no){
   yy <- (ker_den$y[-1] + ker_den$y[-length(ker_den$y)])/2
   ise$third$kernel[i] <- sum((yy - density_sam1(xx))^2*interval)
   # The calculation of the ISE for the penalised kernaldensity estimator
-  ise$third$OS[i] = integrate(function(x){
+  ise$third$OS[i] <- integrate(function(x){
     (OS_Hermite(x, data = sample1) - density_sam1(x))^2},
-    lower = -Inf, upper = Inf, subdivisions = 10^6)$value  
-  pen.ker.den <- dssden(sample.fit, seq(min(sample1),max(sample1),len=n[3]))
-  interval <- sample1[-1] - sample1[-length(sample1)]
-  xx <- (sample1[-1] + sample1[-length(sample1)])/2
-  yy <- (pen.ker.den[-1] + pen.ker.den[-length(pen.ker.den)])/2
-  ise$third$pkd[i] <- sum((yy - density_sam1(xx))^2*interval)
-  # ISE$first$hist[i] <- integrate(function(x){
-  #   (dssden(sample.fit, ) - density_sam1(x))^2},
-  #   lower = -Inf, upper = Inf, subdivisions = 10^6)$value
-  # The calculation of the ISE for the orthogonal series estimator
+    lower = min(sample1), upper = max(sample1))$value  
+  ise$third$pkd[i] <- integrate(function(sample1){
+    (dssden(sample.fit, sample1) - dnorm(sample1, mean = 0, sd = 1))^2}, 
+    lower = min(sample1), upper = max(sample1))$value
 }
-
-# Create the visualization of the integrated squared errors (ISE) of different estimators
-# on samples with sizes n = 250, 500 and 1000 respectively
-
-# The visualization of the ISE of different estimators on samples with size n = 250
-# pdf("Part2_fig1.pdf")
 ```
 
 # 4. Monte Carlo Simulation Study
 
 ```{r fig.height=12, fig.width=12, fig.cap="Integrated squared errors with size n = 250"}
-df <- ise$first %>% 
-  rename("Kernel density" = kernel, 
-         "Orthogonal series" = OS,
-         "Penalised  Kernal Density" = pkd) %>%
-  pivot_longer(cols = 1:3, names_to = "estimators", values_to = "ise")
-ggplot(aes(x = ise, fill = estimators), data = df) +
-  geom_histogram(bins = 25) +
-  facet_grid(estimators ~ .) + guides(fill = "none") + 
-  labs(x = "Integrated Squared Error",
-       y = "Frequency") + 
-  theme(
-    plot.title = element_text(hjust = 0.5, face = "bold"),
-    title = element_text(size = 16),
-    axis.text = element_text(size = 16),
-    strip.text = element_text(size = 16)) +
-  scale_fill_manual(values = c("purple", "green3", "red2")) +
-  scale_x_continuous(breaks = seq(0, 0.1, 0.01))
+# df <- ise$first %>% 
+#   rename("Kernel density" = kernel, 
+#          "Orthogonal series" = OS,
+#          "Penalised  Kernal Density" = pkd) %>%
+#   pivot_longer(cols = 1:3, names_to = "estimators", values_to = "ise")
+# ggplot(aes(x = ise, fill = estimators), data = df) +
+#   geom_histogram(bins = 25) +
+#   facet_grid(estimators ~ .) + guides(fill = "none") + 
+#   labs(x = "Integrated Squared Error",
+#        y = "Frequency") + 
+#   theme(
+#     plot.title = element_text(hjust = 0.5, face = "bold"),
+#     title = element_text(size = 16),
+#     axis.text = element_text(size = 16),
+#     strip.text = element_text(size = 16)) +
+#   scale_fill_manual(values = c("purple", "green3", "red2")) +
+#   scale_x_continuous(breaks = seq(0, 0.1, 0.01))
 # dev.off()
 
 ```
@@ -303,22 +291,22 @@ asdasdfagasdfsdjkb
 \newpage
 
 ```{r fig.height=12, fig.width=12, fig.cap="Integrated Squared Errors with size n = 500"}
-# The visualization of the ISE of different estimators on samples with size n = 500
-df <- ise$second %>% 
-  rename("Kernel density" = kernel, "Orthogonal series" = OS,
-                     "Penalised  Kernal Density" = pkd) %>%
-  pivot_longer(cols = 1:3, names_to = "estimators", values_to = "ise")
-
-ggplot(aes(x = ise, fill = estimators), data = df) + 
-  geom_histogram(bins = 25) + 
-  facet_grid(estimators ~ .) + guides(fill = "none") + 
-  labs(x = "Integrated squared error (ISE)", y = "Frequency") + 
-  theme(plot.title = element_text(hjust = 0.5, face = "bold"),
-        title = element_text(size = 16),
-        axis.text = element_text(size = 16),
-        strip.text = element_text(size = 16)) +
-  scale_fill_manual(values = c("purple", "green3", "red2")) +
-  scale_x_continuous(breaks = seq(0, 0.1, 0.01))
+# # The visualization of the ISE of different estimators on samples with size n = 500
+# df <- ise$second %>% 
+#   rename("Kernel density" = kernel, "Orthogonal series" = OS,
+#                      "Penalised  Kernal Density" = pkd) %>%
+#   pivot_longer(cols = 1:3, names_to = "estimators", values_to = "ise")
+# 
+# ggplot(aes(x = ise, fill = estimators), data = df) + 
+#   geom_histogram(bins = 25) + 
+#   facet_grid(estimators ~ .) + guides(fill = "none") + 
+#   labs(x = "Integrated squared error (ISE)", y = "Frequency") + 
+#   theme(plot.title = element_text(hjust = 0.5, face = "bold"),
+#         title = element_text(size = 16),
+#         axis.text = element_text(size = 16),
+#         strip.text = element_text(size = 16)) +
+#   scale_fill_manual(values = c("purple", "green3", "red2")) +
+#   scale_x_continuous(breaks = seq(0, 0.1, 0.01))
 ```
 
 asdasdasdkjfbahbviuewrnbuin
@@ -343,6 +331,15 @@ ggplot(aes(x = ise, fill = estimators), data = df) +
   scale_fill_manual(values = c("purple", "green3", "red2")) +
   scale_x_continuous(breaks = seq(0, 0.1, 0.01))
 ```
+
+```{r}
+par(mfrow=c(1,3))
+
+boxplot(ise$first)
+boxplot(ise$second)
+boxplot(ise$third)
+```
+
 
 ```{r}
 # Calculate the mean of the ISE of all the density estimators
