@@ -6,43 +6,357 @@ title: |
 author: "Johnny Lee"
 date: '26th Apr 2022 '
 output:
-  pdf_document : default
+  pdf_document : 
+    fig_caption: true
   html_document: default
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = FALSE)
 Sys.setlocale("LC_ALL", "English")
-
-library(tidyverse)  
+library(tidyverse)
+library(gss)
 ```
 
-Let $X_1,\dots,X_n\overset{\text{iid}}{\sim}f$. The kernal
+# 1. Introduction
 
-$$
-\hat{f}(x)=\frac{1}{n}\sum^{n}_{i=1}K_h(x-X_i)
-$$
+In this report, we aim to compute the performance of density function, `density()` also known as the kernel density estimator. In addition to that, we will compare with its other competitors such as Gaussian, uniform and Epanechnikov kernel
 
+# 2. Generating Data
 
 ```{r}
-## Minimal example of a Monte Carlo
-set.seed(1)
+# Generate data for the experiment
 n <- 100
-R <- 1000
-xbar <- numeric()
-for(r in 1:R){
-  xbar[r] <- mean(rnorm(n, 10, 1))
+set.seed(1)
+# The sample one
+mu = 0; sigma = 1
+sample1 <- rnorm(n, mean = 0, sd = 1)
+#The sample two
+alpha = 2; beta = 4
+sample2 <- rbeta(n, shape1 = 2, shape2 = 4)
+```
+
+
+# 3. Preliminary Experiment
+
+Let $X_1,\dots,X_n\overset{\text{iid}}{\sim}f$. The kernel estimator of $f$ is defined as
+
+$$\hat{f}(x)=\frac{1}{n}\sum^{n}_{i=1}K_h(x-X_i)$$
+
+```{r}
+# The implementation of the orthogonal series estimator, using Hermite series
+OS_Hermite <- function(x, data){
+  # The Hermite polynomials
+  # Utilize the recurrence formula "H_n(x) = 2x*H_(n-1)(x) - 2(n-1)*H_(n-2)(x) (n>=2)"
+  # to calculate the Hermite polynomials
+  hermite <- function(x, m){
+    if(m == 0){1}
+    else if(m == 1){2*x}
+    else{
+      a <- 1
+      b <- 2*x
+      for(i in 2:m){
+        c <- 2*x*b - 2*(i - 1)*a
+        a <- b
+        b <- c
+      }
+      c
+    }
+  }
+  # The normalized Hermite functions
+  phi <- function(x, m){
+    (hermite(x, m)/exp((x^2)/2))/sqrt((2^m)*factorial(m)*sqrt(pi))
+  }
+  n <- length(data)
+  value = 0
+  for(m in 0:30){
+    c <- sum(sapply(data, phi, m = m))/n
+    value <- value + c*phi(x, m)
+  }
+  value
+}
+
+# The implementation of the orthogonal series estimator, using trigonometric series
+OS_trigo = function(x, K = 30, data){
+  phi_r = function(x, r){
+    if(r == 0){
+      1
+    }
+    else if(r%%2 == 0){
+      sqrt(2)*sin(pi*r*x)
+    }
+    else if(r%%2 == 1){
+      sqrt(2)*cos(pi*(r + 1)*x)
+    }
+  }
+  n = length(data)
+  value = 0
+  for(r in 0:K){
+    c_r = sum(sapply(data, phi_r, r = r))/n
+    value = value + c_r*phi_r(x, r)
+  }
+  value
 }
 ```
 
-```{r}
-hist(xbar)
+```{r fig.height=10, fig.width=12, fig.cap="One-shot Experiment on Normal distribution"}
+set.seed(1)
+# The density functions for the distributions of the simulated data
+# The density function for the distribution of sample one
+density1 <- function(x){
+  exp(-(x - mu)^2/(2*sigma^2))/(sqrt(2*pi)*sigma)
+}
+# Create the visualizations to illustrate the performances of different density estimators
+sample1.fit <- ssden( ~ sample1, domain = data.frame(sample1))
+# The visualization based on sample one
+xx <- seq(min(sample1), max(sample1), len = n)
+# pdf("Part1_fig1.pdf")
+hist(sample1, freq = FALSE, main = "",
+     xlab = "X", ylab = "Density", xlim = c(-3, 3), ylim = c(0, 0.6))
+lines(density(sample1), col = "green", lwd = 1.6)
+lines(xx, density1(xx), type = "l", col = "black", lty = 2, lwd = 1.6)
+# axis(side = 1, at = seq(min(sample1), max(sample1), n))
+lines(xx, sapply(xx, OS_Hermite, data = sample1), col = "red", lwd = 1.6)
+lines(xx, dssden(sample1.fit, xx), type = "l", col = "orange", lwd = 1.6)
+legend(x = "topright", 
+       legend = c("True Density", 
+                  "Kernel Density Estimator",
+                  "Orthogonal Series Estimator",
+                  "Penalised Kernal Density Estimator"),
+       lty = c(2, 1, 1, 1),
+       col = c("black", "green", "red", "orange"),
+       lwd = 1.8, bty = "n")
+# dev.off()
 ```
 
-One Shot experiment
-
-```{r}
-n <- 100
+```{r fig.height=10, fig.width=12, fig.cap="One-shot Experiment on Beta distribution"}
+# The visualization based on sample two
+# The density function for the distribution of sample two
+density2 <- function(x){
+  x^(alpha - 1)*(1 - x)^(beta - 1)/beta(alpha, beta)
+}
+sample2.fit <- ssden( ~ sample2, domain = data.frame(sample2))
+xx <- seq(min(sample2), max(sample2), len = n)
+hist(sample2, freq = FALSE, main="",
+     xlab = "X", ylab = "Density", xlim = c(0, 0.8), ylim = c(0, 3.8))
+lines(density(sample2), col = "green", lwd = 1.6)
+lines(xx, density2(xx), type = "l", col = "black", lty = 2, lwd = 1.6)
+# axis(side = 1, at = seq(min(sample2), max(sample2), n))
+lines(xx, sapply(xx, OS_trigo, data = sample2), col = "red", lwd = 1.6)
+lines(xx, dssden(sample2.fit, xx), type = "l", col = "orange", lwd = 1.6)
+legend(x = "topright", 
+       legend = c("True Density", 
+                  "Kernel Density Estimator",
+                  "Orthogonal Series Estimator",
+                  "Penalised Kernal Density Estimator"),
+       lty = c(2, 1, 1, 1),
+       col = c("black", "green", "red", "orange"), 
+       lwd = 1.8, bty = "n")
+# # pdf("Part1_fig2.pdf")
+# plot(xx, density2(xx), type = "l", col = "blue", lwd = 1.6,
+#      main = "Performances of different density estimators\n on data from Beta distribution",
+#      xlab = "X", ylab = "Density", xlim = c(0, 1), ylim = c(0, 2.2))
+# lines(density(sample2), col = "green", lwd = 1.6)
+# # lines(xx, sapply(xx, myhist, h = 0.02, data = sample2), col = "purple", lwd = 1.6)
+# lines(X2, sapply(xx, OS_trigo, data = sample2), col = "red", lwd = 1.6)
+# legend(x = "topright", legend = c("Accurate density", "Kernel density estimator",
+#                                   "Histogram estimator", "Orthogonal series estimator"),
+#        lty = c(1, 1, 1, 1), col = c("blue", "green", "purple", "red"), lwd = 1.8, bty = "n")
+# # dev.off()
 ```
 
+
+
+```{r}
+set.seed(1)
+# Initialize some variables
+# R is the times that we repeat the one-shot experiment
+
+mu = 0; sigma = 1
+
+
+repeat.no <- 10
+n <- c(250, 500, 1000)
+df <- 5
+ise <- list()
+ise$first <- ise$second <- data.frame("kernel" = rep(0, repeat.no), 
+                                      "OS" = rep(0, repeat.no),
+                                      "pkd" = rep(0, repeat.no))
+ise$third <- ise$first
+set.seed(1)
+
+# The density function of the distribution of the sample
+density_sam = function(x, df){
+  (1 + x^2/df)^(-(df + 1)/2)*gamma((df + 1)/2)/gamma(df/2)/sqrt(df*pi)
+}
+density_sam1 = function(x){
+  exp(-(x - mu)^2/(2*sigma^2))/(sqrt(2*pi)*sigma)
+}
+# The Monte Carlo Simulation study for sample size n=250
+for(i in 1:repeat.no){
+  sample1 <- rnorm(n[1], mean = mu, sd = sigma)
+  sample.fit <- ssden( ~ sample1, domain = data.frame(sample1))
+  # The calculation of the ISE for the kernel density estimator
+  ker_den <- density(sample1)
+  interval <- ker_den$x[-1] - ker_den$x[-length(ker_den$x)]
+  xx <- (ker_den$x[-1] + ker_den$x[-length(ker_den$x)])/2
+  yy <- (ker_den$y[-1] + ker_den$y[-length(ker_den$y)])/2
+  ise$first$kernel[i] <- sum((yy - density_sam1(xx))^2*interval)
+  # The calculation of the ISE for the penalised kernaldensity estimator
+  ise$first$OS[i] = integrate(function(x){
+    (OS_Hermite(x, data = sample1) - density_sam1(x))^2},
+    lower = -Inf, upper = Inf, subdivisions = 10^6)$value  
+  pen.ker.den <- dssden(sample.fit, seq(min(sample1),max(sample1),len=n[1]))
+  interval <- sample1[-1] - sample1[-length(sample1)]
+  xx <- (sample1[-1] + sample1[-length(sample1)])/2
+  yy <- (pen.ker.den[-1] + pen.ker.den[-length(pen.ker.den)])/2
+  ise$first$pkd[i] <- sum((yy - density_sam1(xx))^2*interval)
+  # ISE$first$hist[i] <- integrate(function(x){
+  #   (dssden(sample.fit, ) - density_sam1(x))^2},
+  #   lower = -Inf, upper = Inf, subdivisions = 10^6)$value
+  # The calculation of the ISE for the orthogonal series estimator
+}
+
+# The Monte Carlo Simulation study for sample size n=500
+for(i in 1:repeat.no){
+  sample1 <- rnorm(n[2], mean = mu, sd = sigma)
+  sample.fit <- ssden( ~ sample1, domain = data.frame(sample1))
+  # The calculation of the ISE for the kernel density estimator
+  ker_den <- density(sample1)
+  interval <- ker_den$x[-1] - ker_den$x[-length(ker_den$x)]
+  xx <- (ker_den$x[-1] + ker_den$x[-length(ker_den$x)])/2
+  yy <- (ker_den$y[-1] + ker_den$y[-length(ker_den$y)])/2
+  ise$second$kernel[i] <- sum((yy - density_sam1(xx))^2*interval)
+  # The calculation of the ISE for the penalised kernaldensity estimator
+  ise$second$OS[i] = integrate(function(x){
+    (OS_Hermite(x, data = sample1) - density_sam1(x))^2},
+    lower = -Inf, upper = Inf, subdivisions = 10^6)$value  
+  pen.ker.den <- dssden(sample.fit, seq(min(sample1),max(sample1),len=n[2]))
+  interval <- sample1[-1] - sample1[-length(sample1)]
+  xx <- (sample1[-1] + sample1[-length(sample1)])/2
+  yy <- (pen.ker.den[-1] + pen.ker.den[-length(pen.ker.den)])/2
+  ise$second$pkd[i] <- sum((yy - density_sam1(xx))^2*interval)
+  # ISE$first$hist[i] <- integrate(function(x){
+  #   (dssden(sample.fit, ) - density_sam1(x))^2},
+  #   lower = -Inf, upper = Inf, subdivisions = 10^6)$value
+  # The calculation of the ISE for the orthogonal series estimator
+}
+
+# The Monte Carlo Simulation study for sample size n=1000
+for(i in 1:repeat.no){
+  sample1 <- rnorm(n[3], mean = mu, sd = sigma)
+  sample.fit <- ssden( ~ sample1, domain = data.frame(sample1))
+  # The calculation of the ISE for the kernel density estimator
+  ker_den <- density(sample1)
+  interval <- ker_den$x[-1] - ker_den$x[-length(ker_den$x)]
+  xx <- (ker_den$x[-1] + ker_den$x[-length(ker_den$x)])/2
+  yy <- (ker_den$y[-1] + ker_den$y[-length(ker_den$y)])/2
+  ise$third$kernel[i] <- sum((yy - density_sam1(xx))^2*interval)
+  # The calculation of the ISE for the penalised kernaldensity estimator
+  ise$third$OS[i] = integrate(function(x){
+    (OS_Hermite(x, data = sample1) - density_sam1(x))^2},
+    lower = -Inf, upper = Inf, subdivisions = 10^6)$value  
+  pen.ker.den <- dssden(sample.fit, seq(min(sample1),max(sample1),len=n[3]))
+  interval <- sample1[-1] - sample1[-length(sample1)]
+  xx <- (sample1[-1] + sample1[-length(sample1)])/2
+  yy <- (pen.ker.den[-1] + pen.ker.den[-length(pen.ker.den)])/2
+  ise$third$pkd[i] <- sum((yy - density_sam1(xx))^2*interval)
+  # ISE$first$hist[i] <- integrate(function(x){
+  #   (dssden(sample.fit, ) - density_sam1(x))^2},
+  #   lower = -Inf, upper = Inf, subdivisions = 10^6)$value
+  # The calculation of the ISE for the orthogonal series estimator
+}
+
+# Create the visualization of the integrated squared errors (ISE) of different estimators
+# on samples with sizes n = 250, 500 and 1000 respectively
+
+# The visualization of the ISE of different estimators on samples with size n = 250
+# pdf("Part2_fig1.pdf")
+```
+
+# 4. Monte Carlo Simulation Study
+
+```{r fig.height=12, fig.width=12, fig.cap="Integrated squared errors with size n = 250"}
+df <- ise$first %>% 
+  rename("Kernel density" = kernel, 
+         "Orthogonal series" = OS,
+         "Penalised  Kernal Density" = pkd) %>%
+  pivot_longer(cols = 1:3, names_to = "estimators", values_to = "ise")
+ggplot(aes(x = ise, fill = estimators), data = df) +
+  geom_histogram(bins = 25) +
+  facet_grid(estimators ~ .) + guides(fill = "none") + 
+  labs(x = "Integrated Squared Error",
+       y = "Frequency") + 
+  theme(
+    plot.title = element_text(hjust = 0.5, face = "bold"),
+    title = element_text(size = 16),
+    axis.text = element_text(size = 16),
+    strip.text = element_text(size = 16)) +
+  scale_fill_manual(values = c("purple", "green3", "red2")) +
+  scale_x_continuous(breaks = seq(0, 0.1, 0.01))
+# dev.off()
+
+```
+
+
+asdasdfagasdfsdjkb
+\newpage
+
+```{r fig.height=12, fig.width=12, fig.cap="Integrated Squared Errors with size n = 500"}
+# The visualization of the ISE of different estimators on samples with size n = 500
+df <- ise$second %>% 
+  rename("Kernel density" = kernel, "Orthogonal series" = OS,
+                     "Penalised  Kernal Density" = pkd) %>%
+  pivot_longer(cols = 1:3, names_to = "estimators", values_to = "ise")
+
+ggplot(aes(x = ise, fill = estimators), data = df) + 
+  geom_histogram(bins = 25) + 
+  facet_grid(estimators ~ .) + guides(fill = "none") + 
+  labs(x = "Integrated squared error (ISE)", y = "Frequency") + 
+  theme(plot.title = element_text(hjust = 0.5, face = "bold"),
+        title = element_text(size = 16),
+        axis.text = element_text(size = 16),
+        strip.text = element_text(size = 16)) +
+  scale_fill_manual(values = c("purple", "green3", "red2")) +
+  scale_x_continuous(breaks = seq(0, 0.1, 0.01))
+```
+
+asdasdasdkjfbahbviuewrnbuin
+
+\newpage
+```{r fig.height=12, fig.width=12, fig.cap="Integrated Squared Errors with size n = 1000"}
+# # The visualization of the ISE of different estimators on samples with size n = 1000
+# pdf("Part2_fig3.pdf")
+df <- ise$third %>% 
+  rename("Kernel density" = kernel, "Orthogonal series" = OS,
+                     "Penalised  Kernal Density" = pkd) %>%
+  pivot_longer(cols = 1:3, names_to = "estimators", values_to = "ise")
+
+ggplot(aes(x = ise, fill = estimators), data = df) + 
+  geom_histogram(bins = 25) + 
+  facet_grid(estimators ~ .) + guides(fill = "none") + 
+  labs(x = "Integrated Squared Error", y = "Frequency") +
+  theme(plot.title = element_text(hjust = 0.5, face = "bold"),
+        title = element_text(size = 16),
+        axis.text = element_text(size = 16),
+        strip.text = element_text(size = 16)) +
+  scale_fill_manual(values = c("purple", "green3", "red2")) +
+  scale_x_continuous(breaks = seq(0, 0.1, 0.01))
+```
+
+```{r}
+# Calculate the mean of the ISE of all the density estimators
+ise.mean <- data.frame(kernel = c(mean(ise$first$kernel),
+                                 mean(ise$second$kernel),
+                                 mean(ise$third$kernel)),
+                      OS = c(mean(ise$first$OS), 
+                             mean(ise$second$OS), 
+                             mean(ise$third$OS)),
+                      pkd = c(mean(ise$first$pkd), 
+                              mean(ise$second$pkd), 
+                              mean(ise$third$pkd)),
+                      row.names = c("first", "second", "third"))
+```
+
+# 5. Conclusion
 
