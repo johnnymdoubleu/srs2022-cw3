@@ -23,7 +23,7 @@ library(gss)
 Density estimation is to form an estimate based on the original data of a probability density function which is popular in various fields including statistics and economics. In this report, we aim to investigate the performance of various density estimators and this report consists of two main parts. In the first part, we aim to perform one-shot experiment on kernel density estimator and compare against its other competitors such as orthogonal series estimator and penalised kernel density estimator. Hence, we will describe the preliminary experiment in the first part. In the second part, we will conduct a Monte Carlo simulation study for different sample sizes on the previously suggested methods. Thus, we will evaluate the integrated squared error (ISE) for different cases of sample sizes. Then we will end this report in the conclusion.
 
 # 2. Preliminary Experiment
-This section consist of the first part of the report where we conduct the preliminary experiments with 3 different density estimators. We will introduce the detailed methodology with its mathematical equation. With random data generation from univariate normal and beta distribution, we will conduct one-shot experiment on these estimators.
+This section consists of the first part of the report where we conduct the preliminary experiments with 3 different density estimators. We will introduce the detailed methodology with its mathematical equation. With random data generation from univariate normal and beta distribution, we will conduct one-shot experiment on these estimators.
 
 ## 2.1 Methodology
 
@@ -153,7 +153,7 @@ Let us look at Figure 1. The figure illustrates the true density (dotted line) w
 
 ### 2.3.2. Beta Distribution
 
-Similarly we performed one-shot experiment on the beta distribution that we generated in the previous part. Looking at Figure 2, we illustrated the true density (dotted line) with a histogram on the actual data set that we generated from. Then we plotted 3 additional lines that represent each of the estimators. By looking at the plot we can clearly observe all curves are smoothly plotted. The kernel density estimator (green) and penalised kernel density estimator (orange) both resembles the true density line. On the other hand, orthogonal series estimator (red) is shown to have the lowest peak with its peak centered on the right side. Thus, for beta distribution we cannot conclude which estimator is performing the best. Therefore, we will move on to the Monte Carlo experiment to validate our experiment on the normal distribution.
+Similarly we performed one-shot experiment on the beta distribution that we generated in the previous part. Looking at Figure 2, we illustrated the true density (dotted line) with a histogram on the actual data set that we generated from. Then we plotted 3 additional lines that represent each of the estimators. By looking at the plot we can clearly observe all curves are smoothly plotted. The kernel density estimator (green) and penalised kernel density estimator (orange) both resembles the true density line. On the other hand, orthogonal series estimator (red) is shown to have the lowest peak with its peak centered on the right side and reasonably apart from the true density. Thus, for beta distribution we can conclude that kernel density estimator and penalised kernel density estimator work well. As we cannot distinguish the performance with beta distribution, we will move on to the Monte Carlo simulation to validate our experiment to discuss which estimators have the best performance.
 
 ```{r fig.height=6.5, fig.width=12, fig.cap="One-shot Experiment on Beta distribution"}
 # The visualization based on sample two
@@ -194,7 +194,7 @@ at recovering the true $\theta$, over $R$ simulated data sets. Hence, we repeate
 $$
 ISE = \int\{\hat{f}(x)-f(x)\}^2
 $$
-to compare the performances of each density estimator on different sample sizes. In addition, we computed the mean ISE (MISE), and illustrate our experiments using figures. Note that for the reproduceability, we fixed a random seed in all of our experiments.  
+to compare the performances of each density estimator on different sample sizes. In addition, we computed the mean integrated squared error (MISE), and illustrated the results in figures below. Note that for the reproduceability, we fixed a random seed in all of our experiments.  
 ```{r}
 set.seed(1)
 # Initialize some variables
@@ -281,7 +281,7 @@ boxplot(ise$second, main = "n = 500")
 boxplot(ise$third, main = "n = 1000")
 ```
 
-Figure 4 further illustrates the MISE values of the three estimators where it solidifies that all estimators have lower MISE values with larger sample size and penalised kernel density estimator having the lowest MISE values. Therefore, if an accurate estimation of densities is required, a large sample size is better choice.
+Figure 4 further illustrates the MISE values of the three estimators where it solidifies that all estimators have lower MISE values with larger sample size and penalised kernel density estimator having the lowest MISE values. Therefore, if an accurate estimation of densities is required, a large sample size is a better choice.
 
 ```{r fig.height=6.5, fig.width=12, fig.cap="Mean Integrated Squared Error with Different Sample Sizes"}
 # Calculate the mean of the ISE of all the density estimators
