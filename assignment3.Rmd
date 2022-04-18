@@ -119,7 +119,7 @@ Now we proceed to one-shot experiment on two randomly generated distribution in 
 ### 2.3.1. Normal Distribution
 
 Let us look at Figure 1. The figure illustrates the true density with a histogram on the actual data set that we generated. Then we plotted 3 additional line that represent each of the estimators. By looking at the plot we can clearly observe that penalised kernel density estimator resembles the true density line the most compared to others. For the kernel density estimator, the peak is slightly on the right side of the distribution. On the other hand, orthogonal series estimator is shown to have a two hump and being less smoother compared to the rest. Overall, we can conclude that penalised kernel density estimator is the best among others in the one-shot experiment on normal distribution.
-```{r fig.height=7.5, fig.width=12, fig.cap="One-shot Experiment on Normal distribution"}
+```{r fig.height=6.5, fig.width=12, fig.cap="One-shot Experiment on Normal distribution"}
 set.seed(1)
 # The density functions for the distributions of the simulated data
 # The density function for the distribution of sample one
@@ -151,7 +151,9 @@ legend(x = "topright",
 ```
 
 ### 2.3.2. Beta Distribution
-```{r fig.height=7.5, fig.width=12, fig.cap="One-shot Experiment on Beta distribution"}
+Similarly we performed one-shot experiment on the beta distribution that we generated in the previous part. Looking at Figure 2, we illustrated the true density with a histogram on the actual data set that we generated from. Then we plotted 3 additional line that represent each of the estimators. By looking at the plot we can clearly observe all curves are smooth but penalised kernel density estimator resembles the true density line the most compared to others. For the kernel density estimator, it has the highest peak. On the other hand, orthogonal series estimator is shown to have the lowest peak. Overall, we can conclude that penalised kernel density estimator is again the best among others in the one-shot experiment on normal distribution.
+
+```{r fig.height=6.5, fig.width=12, fig.cap="One-shot Experiment on Beta distribution"}
 # The visualization based on sample two
 # The density function for the distribution of sample two
 density2 <- function(x){
@@ -180,11 +182,11 @@ legend(x = "topright",
 
 # 3. Monte Carlo Simulation Study
 
-Now we move onto the Monte Carlo Simulation Study, where we repeat the one-shot experiment $R$ times, for different simulated dataset. This brings advantage in concluding with a solid result and logic. Hence, we repeated this process with $100$ times on the randomly generated $X\sim N(0,1)$ on different sample sizes. To that, we computed the integrated squared error,
+Now we move onto the Monte Carlo Simulation Study, where we repeat the one-shot experiment $R$ times, for different simulated dataset. This brings advantage in concluding with a solid result and logic. Hence, we repeated this process with $100$ times on the randomly generated $X\sim N(0,1)$ on sample sizes with $250$, $500$ and $1000$. To that, we computed the integrated squared error,
 $$
 ISE = \int\{\hat{f}(x)-f(x)\}^2
 $$
-to compare the performances of each density estimator on different sample sizes. Note that for the reproduceability, we fixed a seed in `R` using `set.seed(1)`.  
+to compare the performances of each density estimator on different sample sizes. In addition, we computed the mean ISE (MISE), and illustrate our experiments using figures. Note that for the reproduceability, we fixed a random seed in all of our experiments.  
 ```{r}
 set.seed(1)
 # Initialize some variables
@@ -266,12 +268,12 @@ for(i in 1:repeat.no){
 ```{r fig.cap="Boxplot of Different Estimators with Different Sample Sizes"}
 par(mfrow=c(1,3))
 
-boxplot(ise$first)
+boxplot(ise$first, main = "n = 250")
 boxplot(ise$second)
 boxplot(ise$third)
 ```
 
-
+Referring to Figure 3, we plotted the boxplots of three different estimators with different sample sizes. `kernel` stands for the kernel density estimator, `OS` stands for the orthogonal series estimator and `pkd` stands for the penalised kernel density estimator. Scrutinising its general trend, we can observe that the  `OS` has the largest quartile range and highest mean ISE values. We also observed that as the sample size, $n$ increases, we can se 
 ```{r fig.cap="Mean Integrated Squared Error with Different Sample Sizes"}
 # Calculate the mean of the ISE of all the density estimators
 ise.mean <- data.frame(kernel = c(mean(ise$first$kernel),
