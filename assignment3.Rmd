@@ -20,7 +20,7 @@ library(gss)
 
 # 1. Introduction
 
-This report consists of two main parts. In the first part, we aim to compute one-shot experiment on density function, `density()` also known as the kernel density estimator. In addition to that, we will compare with its other competitors such as orthogonal series estimator and penalised kernel density estimator. In the second part, we will conduct a Monte Carlo simulation study for different sample sizes on the previously suggested methods. Thus, we will evaluate the integrated squared error (ISE) for different cases of sample sizes.
+This report consists of two main parts. In the first part, we aim to compute one-shot experiment on kernel density estimator and compare against its other competitors such as orthogonal series estimator and penalised kernel density estimator. Hence, we will describe the preliminary experiment in the first part. In the second part, we will conduct a Monte Carlo simulation study for different sample sizes on the previously suggested methods. Thus, we will evaluate the integrated squared error (ISE) for different cases of sample sizes. Then we will end this report in the conclusion.
 
 # 2. Preliminary Experiment
 This section consist of the first part of the report where we conduct the preliminary experiments with 3 different density estimators. We will introduce the detailed methodology with its mathematical equation. With random data generation from normal and beta distribution, we will conduct one-shot experiment on these estimators.
@@ -31,7 +31,7 @@ This section consist of the first part of the report where we conduct the prelim
 Let $X_1,\dots,X_n\overset{\text{iid}}{\sim}f$. The kernel density estimator of $f$ is defined as
 
 $$\hat{f}(x)=\frac{1}{n}\sum^{n}_{i=1}K_h(x-X_i)$$
-where $K_h(x)=\frac{K(x)}{h}$, $K$ is a kernel and $h>0$ is a parameter controlling smoothness of the estimate. `density()` function performs univariate density estimate with various kernels but we will choose the default kernel and bandwidth in this experiment.
+where $K_h(x)=\frac{K(x)}{h}$, $K$ is a kernel and $h>0$ is a parameter controlling smoothness of the estimate. Thus, we will perform an univariate density estimate with default kernel and bandwidth settings in this experiment.
 
 ### 2.1.2 Orthogonal Series Estimator 
 With reference to (Kreyszig, 1991)[5], Kreyszig introduced the orthogonal series estimator using normalised Hermite polynomials. These polynomials form a orthonormal sequence for the univariate case as below,
@@ -40,11 +40,11 @@ and
 $$
 H_0(x)=1, \quad H_i(x)=(-1)^i\exp(x^2)\frac{d^i}{dx^i}\exp(-x^2)
 $$
-where $H_i(x)$ is called the \textit{Hermite polynomial of order $i$}. Furthermore, we can further simplify the process as Kreyszig showed its properties as below.
+where $H_i(x)$ is called the \textit{Hermite polynomial of order $i$} and orthogonal with respect to the probability density function. Furthermore, we can further simplify the process as Kreyszig showed its properties in a recurrence relation as below,
 $$
 H_{i+1}(x)=2xH_i(x)-H'_i(x), \quad H'_{i}(x)=2iH_{i-1}(x)
 $$
-Based on the properties above, we define a new function known as `OS_Hermite()` to iterate the process to obtain the series of estimation.
+Thus, we defined a new function to proceed to the iteration above to obtain the series of estimation.
 
 ```{r}
 # The implementation of the orthogonal series estimator, using Hermite series
@@ -92,13 +92,12 @@ where $\phi_n(x)$ is the basis densities. Then the weight $c_n$ is parameterised
 $$
 c_n(y)=\frac{\exp(\beta_n)}{\sum^{m}_{n=-m}\exp(\beta_n)}
 $$
-with $\beta_0=0$ and $\pmb{\beta} = \beta_{-m}, \dots, \beta_{-1}, \beta_1, \dots\beta_m$ so that $\int f(x)dx=1$. 
-
-(Deng et al, 2011)[1] then further suggested the simplified kernel approach 
+with $\beta_0=0$ and $\pmb{\beta} = \beta_{-m}, \dots, \beta_{-1}, \beta_1, \dots\beta_m$ so that $\int f(x)dx=1$. (Deng et al, 2011)[1] then further suggested the simplified kernel approach that looks similar to kernel density estimator. The following expression shows the penalised approach for nonparametric density estimation for univariate case,
 $$
 \hat{f}(x)=\frac{1}{m}\sum^{m}_{n=1}K\bigg(\frac{x-\mu_n}{h}\bigg)
 $$
-and introduced a package `gss`, (Gu, 2011)[3] which uses a penalised likelihood approach for nonparametric density estimation. With the functions `ssden()` and `dssden()`, we can estimate the kernel density.
+where $\mu_i$ is a hyperparameter known as knots being placed on an equally spaced locations on the domain of the dataset. 
+<!-- and introduced a package `gss`, (Gu, 2011)[3] which uses a penalised likelihood approach for nonparametric density estimation. With the functions `ssden()` and `dssden()`, we can estimate the kernel density. -->
 
 ## 2.2. Data Generating Process
 
@@ -112,9 +111,14 @@ sample1 <- rnorm(n, mean = 0, sd = 1)
 sample2 <- rbeta(n, shape1 = 2, shape2 = 4)
 ```
 
-We generated two random distributions, normal distribution and beta distribution. For the first distribution, we used`rnorm()` and setting $\mu$ and $\sigma$ as $0$ and $1$ respectively. Then the second distribution takes $\alpha$ and $\beta$ as $2$ and $4$. These values are chosen randomly and no specific reason and we are generating the data in a random process
+We generated two random distributions, normal distribution and beta distribution. For the first distribution, we randomly generated $X\sim N(0,1)$ with $1000$ samples. Then the second distribution takes $X\sim Beta(2,4)$ with $1000$ samples. These values are chosen on a random basis and we are generating the data in a random process in base `R`.
 
 ## 2.3. One-shot Experiments 
+Now we proceed to one-shot experiment on two randomly generated distribution in the previous section. First of all, one-shot experiment is the outcome produced by a single simulated data set. 
+
+### 2.3.1. Normal Distribution
+
+Let us look at Figure 1. The figure illustrates the true density with a histogram on the actual data set that we generated. Then we plotted 3 additional line that represent each of the estimators. By looking at the plot we can clearly observe that penalised kernel density estimator resembles the true density line the most compared to others. For the kernel density estimator, the peak is slightly on the right side of the distribution. On the other hand, orthogonal series estimator is shown to have a two hump and being less smoother compared to the rest. Overall, we can conclude that penalised kernel density estimator is the best among others in the one-shot experiment on normal distribution.
 ```{r fig.height=7.5, fig.width=12, fig.cap="One-shot Experiment on Normal distribution"}
 set.seed(1)
 # The density functions for the distributions of the simulated data
@@ -144,9 +148,9 @@ legend(x = "topright",
        lty = c(2, 1, 1, 1),
        col = c("black", "green", "red", "orange"),
        lwd = 1.8, bty = "n")
-# dev.off()
 ```
 
+### 2.3.2. Beta Distribution
 ```{r fig.height=7.5, fig.width=12, fig.cap="One-shot Experiment on Beta distribution"}
 # The visualization based on sample two
 # The density function for the distribution of sample two
@@ -174,9 +178,13 @@ legend(x = "topright",
        lwd = 1.8, bty = "n")
 ```
 
-# 4. Monte Carlo Simulation Study
+# 3. Monte Carlo Simulation Study
 
-
+Now we move onto the Monte Carlo Simulation Study, where we repeat the one-shot experiment $R$ times, for different simulated dataset. This brings advantage in concluding with a solid result and logic. Hence, we repeated this process with $100$ times on the randomly generated $X\sim N(0,1)$ on different sample sizes. To that, we computed the integrated squared error,
+$$
+ISE = \int\{\hat{f}(x)-f(x)\}^2
+$$
+to compare the performances of each density estimator on different sample sizes. Note that for the reproduceability, we fixed a seed in `R` using `set.seed(1)`.  
 ```{r}
 set.seed(1)
 # Initialize some variables
@@ -264,7 +272,7 @@ boxplot(ise$third)
 ```
 
 
-```{r fig.height=7, fig.width=10, fig.cap="Mean Integrated Squared Error with Different Sample Sizes"}
+```{r fig.cap="Mean Integrated Squared Error with Different Sample Sizes"}
 # Calculate the mean of the ISE of all the density estimators
 ise.mean <- data.frame(kernel = c(mean(ise$first$kernel),
                                  mean(ise$second$kernel),
@@ -292,7 +300,7 @@ legend(x = "topright",
        lwd = 1.8, bty = "n")
 ```
 
-# 5. Conclusion
+# 4. Conclusion
 
 \newpage
 
@@ -302,9 +310,9 @@ legend(x = "topright",
 
 2. Girolami, M., 2002. Orthogonal series density estimation and the kernel eigenvalue problem. Neural computation, 14(3), pp.669-688
 
-3. Gu, C., 2011. Smoothing spline ANOVA models: R package gss. Journal of Statistical Software, 58, pp.1-25.
+<!-- 3. Gu, C., 2011. Smoothing spline ANOVA models: R package gss. Journal of Statistical Software, 58, pp.1-25. -->
 
-4. Kauermann, G. and Schellhase, C., 2019. Density Estimation with a Penalized Mixture Approach.
+3. Kauermann, G. and Schellhase, C., 2019. Density Estimation with a Penalized Mixture Approach.
 
-5. Kreyszig, E., 1991. Introductory functional analysis with applications (Vol. 17). John Wiley & Sons.
+4. Kreyszig, E., 1991. Introductory functional analysis with applications (Vol. 17). John Wiley & Sons.
 
