@@ -23,6 +23,7 @@ library(gss)
 This report consists of two main parts. In the first part, we aim to compute one-shot experiment on density function, `density()` also known as the kernel density estimator. In addition to that, we will compare with its other competitors such as orthogonal series estimator and penalised kernel density estimator. In the second part, we will conduct a Monte Carlo simulation study for different sample sizes on the previously suggested methods. Thus, we will evaluate the integrated squared error (ISE) for different cases of sample sizes.
 
 # 2. Preliminary Experiment
+This section consist of the first part of the report where we conduct the preliminary experiments with 3 different density estimators. We will introduce the detailed methodology with its mathematical equation. With random data generation from normal and beta distribution, we will conduct one-shot experiment on these estimators.
 
 ## 2.1 Methodology
 
@@ -30,7 +31,7 @@ This report consists of two main parts. In the first part, we aim to compute one
 Let $X_1,\dots,X_n\overset{\text{iid}}{\sim}f$. The kernel density estimator of $f$ is defined as
 
 $$\hat{f}(x)=\frac{1}{n}\sum^{n}_{i=1}K_h(x-X_i)$$
-where $K_h(x)=\frac{K(x)}{h}$, $K$ is a kernel and $h>0$ is a parameter controlling smootheness of the estimate. This is avaiable as the base function of `R` as `density()`. 
+where $K_h(x)=\frac{K(x)}{h}$, $K$ is a kernel and $h>0$ is a parameter controlling smoothness of the estimate. `density()` function performs univariate density estimate with various kernels but we will choose the default kernel and bandwidth in this experiment.
 
 ### 2.1.2 Orthogonal Series Estimator 
 With reference to (Kreyszig, 1991)[5], Kreyszig introduced the orthogonal series estimator using normalised Hermite polynomials. These polynomials form a orthonormal sequence for the univariate case as below,
@@ -93,13 +94,13 @@ c_n(y)=\frac{\exp(\beta_n)}{\sum^{m}_{n=-m}\exp(\beta_n)}
 $$
 with $\beta_0=0$ and $\pmb{\beta} = \beta_{-m}, \dots, \beta_{-1}, \beta_1, \dots\beta_m$ so that $\int f(x)dx=1$. 
 
-(Deng et al, 2011)[1] then further suggested the simplified kernel apporach 
+(Deng et al, 2011)[1] then further suggested the simplified kernel approach 
 $$
 \hat{f}(x)=\frac{1}{m}\sum^{m}_{n=1}K\bigg(\frac{x-\mu_n}{h}\bigg)
 $$
 and introduced a package `gss`, (Gu, 2011)[3] which uses a penalised likelihood approach for nonparametric density estimation. With the functions `ssden()` and `dssden()`, we can estimate the kernel density.
 
-## 2.2. Generating Data
+## 2.2. Data Generating Process
 
 ```{r}
 # Generate data for the experiment
@@ -111,7 +112,7 @@ sample1 <- rnorm(n, mean = 0, sd = 1)
 sample2 <- rbeta(n, shape1 = 2, shape2 = 4)
 ```
 
-We generated 
+We generated two random distributions, normal distribution and beta distribution. For the first distribution, we used`rnorm()` and setting $\mu$ and $\sigma$ as $0$ and $1$ respectively. Then the second distribution takes $\alpha$ and $\beta$ as $2$ and $4$. These values are chosen randomly and no specific reason and we are generating the data in a random process
 
 ## 2.3. One-shot Experiments 
 ```{r fig.height=7.5, fig.width=12, fig.cap="One-shot Experiment on Normal distribution"}
@@ -129,7 +130,8 @@ xx <- seq(min(sample1), max(sample1), len = n)
 # pdf("Part1_fig1.pdf")
 hist(sample1, freq = FALSE, main = "",
      xlab = "X", ylab = "Density", xlim = c(-3, 3), ylim = c(0, 0.6))
-lines(density(sample1), col = "green", lwd = 1.6)
+lines(density(sample1, from = min(sample1), to = max(sample1)), 
+      col = "green", lwd = 1.6)
 lines(xx, density1(xx), type = "l", col = "black", lty = 2, lwd = 1.6)
 # axis(side = 1, at = seq(min(sample1), max(sample1), n))
 lines(xx, sapply(xx, OS_Hermite, data = sample1), col = "red", lwd = 1.6)
@@ -156,7 +158,8 @@ sample2.fit <- ssden( ~ sample2, domain = data.frame(sample2))
 xx <- seq(min(sample2), max(sample2), len = n)
 hist(sample2, freq = FALSE, main="",
      xlab = "X", ylab = "Density", xlim = c(0, 0.8), ylim = c(0, 3.8))
-lines(density(sample2), col = "green", lwd = 1.6)
+lines(density(sample2, from = min(sample2), to = max(sample2)), 
+      col = "green", lwd = 1.6)
 lines(xx, density2(xx), type = "l", col = "black", lty = 2, lwd = 1.6)
 # axis(side = 1, at = seq(min(sample2), max(sample2), n))
 lines(xx, sapply(xx, OS_Hermite, data = sample2), col = "red", lwd = 1.6)
