@@ -20,28 +20,30 @@ library(gss)
 
 # 1. Introduction
 
-This report consists of two main parts. In the first part, we aim to compute one-shot experiment on density function, `density()` also known as the kernel density estimator. In addition to that, we will compare with its other competitors such as orthogonal series estimator and penalised kernal density estimator. 
+This report consists of two main parts. In the first part, we aim to compute one-shot experiment on density function, `density()` also known as the kernel density estimator. In addition to that, we will compare with its other competitors such as orthogonal series estimator and penalised kernel density estimator. In the second part, we will conduct a Monte Carlo simulation study for different sample sizes on the previously suggested methods. Thus, we will evaluate the integrated squared error (ISE) for different cases of sample sizes.
 
-# 2. Generating Data
+# 2. Preliminary Experiment
 
-```{r}
-# Generate data for the experiment
-n <- 100
-set.seed(1)
-# The sample one
-mu = 0; sigma = 1
-sample1 <- rnorm(n, mean = 0, sd = 1)
-#The sample two
-alpha = 2; beta = 4
-sample2 <- rbeta(n, shape1 = 2, shape2 = 4)
-```
+## 2.1 Methodology
 
-
-# 3. Preliminary Experiment
-
-Let $X_1,\dots,X_n\overset{\text{iid}}{\sim}f$. The kernel estimator of $f$ is defined as
+### 2.1.1 Kernel Denisty Estimator
+Let $X_1,\dots,X_n\overset{\text{iid}}{\sim}f$. The kernel density estimator of $f$ is defined as
 
 $$\hat{f}(x)=\frac{1}{n}\sum^{n}_{i=1}K_h(x-X_i)$$
+where $K_h(x)=\frac{K(x)}{h}$, $K$ is a kernel and $h>0$ is a parameter controlling smootheness of the estimate. This is avaiable as the base function of `R` as `density()`. 
+
+### 2.1.2 Orthogonal Series Estimator 
+With reference to (Kreyszig, 1991)[5], Kreyszig introduced the orthogonal series estimator using normalised Hermite polynomials. These polynomials form a orthonormal sequence for the univariate case as below,
+$$\hat{f}(x)=\frac{1}{(2^ii!\sqrt{x})^{\frac{1}{2}}}\exp(-x^2/2)H_i(x)$$
+and 
+$$
+H_0(x)=1, \quad H_i(x)=(-1)^i\exp(x^2)\frac{d^i}{dx^i}\exp(-x^2)
+$$
+where $H_i(x)$ is called the \textit{Hermite polynomial of order $i$}. Furthermore, we can further simplify the process as Kreyszig showed its properties as below.
+$$
+H_{i+1}(x)=2xH_i(x)-H'_i(x), \quad H'_{i}(x)=2iH_{i-1}(x)
+$$
+Based on the properties above, we define a new function known as `OS_Hermite()` to iterate the process to obtain the series of estimation.
 
 ```{r}
 # The implementation of the orthogonal series estimator, using Hermite series
@@ -77,35 +79,47 @@ OS_Hermite <- function(x, data){
   }
   value
 }
-
-# The implementation of the orthogonal series estimator, using trigonometric series
-OS_trigo = function(x, K = 30, data){
-  phi_r = function(x, r){
-    if(r == 0){
-      1
-    }
-    else if(r%%2 == 0){
-      sqrt(2)*sin(pi*r*x)
-    }
-    else if(r%%2 == 1){
-      sqrt(2)*cos(pi*(r + 1)*x)
-    }
-  }
-  n = length(data)
-  value = 0
-  for(r in 0:K){
-    c_r = sum(sapply(data, phi_r, r = r))/n
-    value = value + c_r*phi_r(x, r)
-  }
-  value
-}
 ```
 
-```{r fig.height=10, fig.width=12, fig.cap="One-shot Experiment on Normal distribution"}
+### 2.1.3 Penalised Kernel Density Estimator
+(Kauermann et al, 2009)[4] introduces the penalised likelihood 
+
+$$
+\hat{f}(x)=\sum^{m}_{n=-m}c_n\phi_n(x),
+$$
+where $\phi_n(x)$ is the basis densities. Then the weight $c_n$ is parameterised as follow
+$$
+c_n(y)=\frac{\exp(\beta_n)}{\sum^{m}_{n=-m}\exp(\beta_n)}
+$$
+with $\beta_0=0$ and $\pmb{\beta} = \beta_{-m}, \dots, \beta_{-1}, \beta_1, \dots\beta_m$ so that $\int f(x)dx=1$. 
+
+(Deng et al, 2011)[1] then further suggested the simplified kernel apporach 
+$$
+\hat{f}(x)=\frac{1}{m}\sum^{m}_{n=1}K\bigg(\frac{x-\mu_n}{h}\bigg)
+$$
+and introduced a package `gss`, (Gu, 2011)[3] which uses a penalised likelihood approach for nonparametric density estimation. With the functions `ssden()` and `dssden()`, we can estimate the kernel density.
+
+## 2.2. Generating Data
+
+```{r}
+# Generate data for the experiment
+n <- 100
+set.seed(1)
+# The sample one
+sample1 <- rnorm(n, mean = 0, sd = 1)
+#The sample two
+sample2 <- rbeta(n, shape1 = 2, shape2 = 4)
+```
+
+We generated 
+
+## 2.3. One-shot Experiments 
+```{r fig.height=7.5, fig.width=12, fig.cap="One-shot Experiment on Normal distribution"}
 set.seed(1)
 # The density functions for the distributions of the simulated data
 # The density function for the distribution of sample one
 density1 <- function(x){
+  mu <- 0; sigma <- 1
   exp(-(x - mu)^2/(2*sigma^2))/(sqrt(2*pi)*sigma)
 }
 # Create the visualizations to illustrate the performances of different density estimators
@@ -131,10 +145,11 @@ legend(x = "topright",
 # dev.off()
 ```
 
-```{r fig.height=10, fig.width=12, fig.cap="One-shot Experiment on Beta distribution"}
+```{r fig.height=7.5, fig.width=12, fig.cap="One-shot Experiment on Beta distribution"}
 # The visualization based on sample two
 # The density function for the distribution of sample two
 density2 <- function(x){
+  alpha <- 2; beta <- 4
   x^(alpha - 1)*(1 - x)^(beta - 1)/beta(alpha, beta)
 }
 sample2.fit <- ssden( ~ sample2, domain = data.frame(sample2))
@@ -144,7 +159,7 @@ hist(sample2, freq = FALSE, main="",
 lines(density(sample2), col = "green", lwd = 1.6)
 lines(xx, density2(xx), type = "l", col = "black", lty = 2, lwd = 1.6)
 # axis(side = 1, at = seq(min(sample2), max(sample2), n))
-lines(xx, sapply(xx, OS_trigo, data = sample2), col = "red", lwd = 1.6)
+lines(xx, sapply(xx, OS_Hermite, data = sample2), col = "red", lwd = 1.6)
 lines(xx, dssden(sample2.fit, xx), type = "l", col = "orange", lwd = 1.6)
 legend(x = "topright", 
        legend = c("True Density", 
@@ -154,26 +169,15 @@ legend(x = "topright",
        lty = c(2, 1, 1, 1),
        col = c("black", "green", "red", "orange"), 
        lwd = 1.8, bty = "n")
-# # pdf("Part1_fig2.pdf")
-# plot(xx, density2(xx), type = "l", col = "blue", lwd = 1.6,
-#      main = "Performances of different density estimators\n on data from Beta distribution",
-#      xlab = "X", ylab = "Density", xlim = c(0, 1), ylim = c(0, 2.2))
-# lines(density(sample2), col = "green", lwd = 1.6)
-# # lines(xx, sapply(xx, myhist, h = 0.02, data = sample2), col = "purple", lwd = 1.6)
-# lines(X2, sapply(xx, OS_trigo, data = sample2), col = "red", lwd = 1.6)
-# legend(x = "topright", legend = c("Accurate density", "Kernel density estimator",
-#                                   "Histogram estimator", "Orthogonal series estimator"),
-#        lty = c(1, 1, 1, 1), col = c("blue", "green", "purple", "red"), lwd = 1.8, bty = "n")
-# # dev.off()
 ```
 
+# 4. Monte Carlo Simulation Study
 
 
 ```{r}
 set.seed(1)
 # Initialize some variables
-# R is the times that we repeat the one-shot experiment
-mu <- 0;sigam <- 1
+mu <- 0; sigma <- 1
 repeat.no <- 10
 n <- c(250, 500, 1000)
 df <- 5
@@ -184,9 +188,6 @@ ise$second <- ise$first <- data.frame("kernel" = rep(0, repeat.no),
 ise$third <- ise$first
 
 # The density function of the distribution of the sample
-density_sam = function(x, df){
-  (1 + x^2/df)^(-(df + 1)/2)*gamma((df + 1)/2)/gamma(df/2)/sqrt(df*pi)
-}
 density_sam1 = function(x){
   exp(-(x - mu)^2/(2*sigma^2))/(sqrt(2*pi)*sigma)
 }
@@ -200,23 +201,15 @@ for(i in 1:repeat.no){
   xx <- (ker_den$x[-1] + ker_den$x[-length(ker_den$x)])/2
   yy <- (ker_den$y[-1] + ker_den$y[-length(ker_den$y)])/2
   ise$first$kernel[i] <- sum((yy - density_sam1(xx))^2*interval)
+  
   # The calculation of the ISE for the penalised kernal density estimator
   ise$first$OS[i] <- integrate(function(x){
     (OS_Hermite(x, data = sample1) - density_sam1(x))^2},
     lower = min(sample1), upper = max(sample1))$value 
   
-  # pen.ker.den <- dssden(sample.fit, seq(min(sample1),max(sample1),len=n[1]))
   ise$first$pkd[i] <- integrate(function(sample1){
     (dssden(sample.fit, sample1) - dnorm(sample1, mean = 0, sd = 1))^2}, 
     lower = min(sample1), upper = max(sample1))$value
-  # interval <- sample1[-1] - sample1[-length(sample1)]
-  # xx <- (sample1[-1] + sample1[-length(sample1)])/2
-  # yy <- (pen.ker.den[-1] + pen.ker.den[-length(pen.ker.den)])/2
-  # ise$first$pkd[i] <- sum((yy - density_sam1(xx))^2*interval)
-  # ISE$first$hist[i] <- integrate(function(x){
-  #   (dssden(sample.fit, ) - density_sam1(x))^2},
-  #   lower = -Inf, upper = Inf, subdivisions = 10^6)$value
-  # The calculation of the ISE for the orthogonal series estimator
 }
 
 # The Monte Carlo Simulation study for sample size n=500
@@ -229,17 +222,13 @@ for(i in 1:repeat.no){
   xx <- (ker_den$x[-1] + ker_den$x[-length(ker_den$x)])/2
   yy <- (ker_den$y[-1] + ker_den$y[-length(ker_den$y)])/2
   ise$second$kernel[i] <- sum((yy - density_sam1(xx))^2*interval)
-  # The calculation of the ISE for the penalised kernaldensity estimator
+  # The calculation of the ISE for the penalised kernal density estimator
   ise$second$OS[i] = integrate(function(x){
     (OS_Hermite(x, data = sample1) - density_sam1(x))^2},
     lower = min(sample1), upper = max(sample1))$value  
   ise$second$pkd[i] <- integrate(function(sample1){
     (dssden(sample.fit, sample1) - dnorm(sample1, mean = 0, sd = 1))^2}, 
     lower = min(sample1), upper = max(sample1))$value
-  # ISE$first$hist[i] <- integrate(function(x){
-  #   (dssden(sample.fit, ) - density_sam1(x))^2},
-  #   lower = -Inf, upper = Inf, subdivisions = 10^6)$value
-  # The calculation of the ISE for the orthogonal series estimator
 }
 
 # The Monte Carlo Simulation study for sample size n=1000
@@ -262,77 +251,8 @@ for(i in 1:repeat.no){
 }
 ```
 
-# 4. Monte Carlo Simulation Study
 
-```{r fig.height=12, fig.width=12, fig.cap="Integrated squared errors with size n = 250"}
-# df <- ise$first %>% 
-#   rename("Kernel density" = kernel, 
-#          "Orthogonal series" = OS,
-#          "Penalised  Kernal Density" = pkd) %>%
-#   pivot_longer(cols = 1:3, names_to = "estimators", values_to = "ise")
-# ggplot(aes(x = ise, fill = estimators), data = df) +
-#   geom_histogram(bins = 25) +
-#   facet_grid(estimators ~ .) + guides(fill = "none") + 
-#   labs(x = "Integrated Squared Error",
-#        y = "Frequency") + 
-#   theme(
-#     plot.title = element_text(hjust = 0.5, face = "bold"),
-#     title = element_text(size = 16),
-#     axis.text = element_text(size = 16),
-#     strip.text = element_text(size = 16)) +
-#   scale_fill_manual(values = c("purple", "green3", "red2")) +
-#   scale_x_continuous(breaks = seq(0, 0.1, 0.01))
-# dev.off()
-
-```
-
-
-asdasdfagasdfsdjkb
-\newpage
-
-```{r fig.height=12, fig.width=12, fig.cap="Integrated Squared Errors with size n = 500"}
-# # The visualization of the ISE of different estimators on samples with size n = 500
-# df <- ise$second %>% 
-#   rename("Kernel density" = kernel, "Orthogonal series" = OS,
-#                      "Penalised  Kernal Density" = pkd) %>%
-#   pivot_longer(cols = 1:3, names_to = "estimators", values_to = "ise")
-# 
-# ggplot(aes(x = ise, fill = estimators), data = df) + 
-#   geom_histogram(bins = 25) + 
-#   facet_grid(estimators ~ .) + guides(fill = "none") + 
-#   labs(x = "Integrated squared error (ISE)", y = "Frequency") + 
-#   theme(plot.title = element_text(hjust = 0.5, face = "bold"),
-#         title = element_text(size = 16),
-#         axis.text = element_text(size = 16),
-#         strip.text = element_text(size = 16)) +
-#   scale_fill_manual(values = c("purple", "green3", "red2")) +
-#   scale_x_continuous(breaks = seq(0, 0.1, 0.01))
-```
-
-asdasdasdkjfbahbviuewrnbuin
-
-\newpage
-```{r fig.height=12, fig.width=12, fig.cap="Integrated Squared Errors with size n = 1000"}
-# # The visualization of the ISE of different estimators on samples with size n = 1000
-# pdf("Part2_fig3.pdf")
-df <- ise$third %>% 
-  rename("Kernel density" = kernel, "Orthogonal series" = OS,
-                     "Penalised  Kernal Density" = pkd) %>%
-  pivot_longer(cols = 1:3, names_to = "estimators", values_to = "ise")
-
-ggplot(aes(x = ise, fill = estimators), data = df) + 
-  geom_histogram(bins = 25) + 
-  facet_grid(estimators ~ .) + guides(fill = "none") + 
-  labs(x = "Integrated Squared Error", y = "Frequency") +
-  theme(plot.title = element_text(hjust = 0.5, face = "bold"),
-        title = element_text(size = 16),
-        axis.text = element_text(size = 16),
-        strip.text = element_text(size = 16)) +
-  scale_fill_manual(values = c("purple", "green3", "red2")) +
-  scale_x_continuous(breaks = seq(0, 0.1, 0.01))
-```
-
-```{r}
+```{r fig.cap="Boxplot of Different Estimators with Different Sample Sizes"}
 par(mfrow=c(1,3))
 
 boxplot(ise$first)
@@ -341,7 +261,7 @@ boxplot(ise$third)
 ```
 
 
-```{r}
+```{r fig.height=7, fig.width=10, fig.cap="Mean Integrated Squared Error with Different Sample Sizes"}
 # Calculate the mean of the ISE of all the density estimators
 ise.mean <- data.frame(kernel = c(mean(ise$first$kernel),
                                  mean(ise$second$kernel),
@@ -353,7 +273,35 @@ ise.mean <- data.frame(kernel = c(mean(ise$first$kernel),
                               mean(ise$second$pkd), 
                               mean(ise$third$pkd)),
                       row.names = c("first", "second", "third"))
+
+plot(ise.mean$kernel, type = "b", col = "green", ylim = c(0,0.008), 
+     xaxt = "n", xlab = "sample size")
+axis(1, at = 1:3, labels = c(250, 500, 1000))
+lines(ise.mean$OS, type = "b", col = "red")
+lines(ise.mean$pkd, type = "b", col = "orange")
+
+legend(x = "topright", 
+       legend = c("Kernel Density Estimator",
+                  "Orthogonal Series Estimator",
+                  "Penalised Kernal Density Estimator"),
+       lty = c(1, 1, 1),
+       col = c("green", "red", "orange"), 
+       lwd = 1.8, bty = "n")
 ```
 
 # 5. Conclusion
+
+\newpage
+
+# Reference
+
+1. Deng, H. and Wickham, H., 2011. Density estimation in R. Electronic publication.
+
+2. Girolami, M., 2002. Orthogonal series density estimation and the kernel eigenvalue problem. Neural computation, 14(3), pp.669-688
+
+3. Gu, C., 2011. Smoothing spline ANOVA models: R package gss. Journal of Statistical Software, 58, pp.1-25.
+
+4. Kauermann, G. and Schellhase, C., 2019. Density Estimation with a Penalized Mixture Approach.
+
+5. Kreyszig, E., 1991. Introductory functional analysis with applications (Vol. 17). John Wiley & Sons.
 
