@@ -4,7 +4,7 @@ title: |
   <center> Statistical Research Skills </center>
   <center> Assignment 3 - Simulation Report</center>
 author: "Johnny Lee, s1687781"
-date: '26th Apr 2022 '
+date: '26th April 2022 '
 output:
   pdf_document : 
     fig_caption: true
@@ -23,7 +23,7 @@ library(gss)
 Density estimation is to form an estimate based on the original data of a probability density function which is popular in various fields including statistics and economics. In this report, we aim to investigate the performance of various density estimators and this report consists of two main parts. In the first part, we aim to perform one-shot experiment on kernel density estimator and compare against its other competitors such as orthogonal series estimator and penalised kernel density estimator. Hence, we will describe the preliminary experiment in the first part. In the second part, we will conduct a Monte Carlo simulation study for different sample sizes on the previously suggested methods. Thus, we will evaluate the integrated squared error (ISE) for different cases of sample sizes. Then we will end this report in the conclusion.
 
 # 2. Preliminary Experiment
-This section consists of the first part of the report where we conduct the preliminary experiments with 3 different density estimators. We will introduce the detailed methodology with its mathematical equation. With random data generation from univariate normal and beta distribution, we will conduct one-shot experiment on these estimators.
+This section consists of the first part of the report where we conduct the preliminary experiments with 3 different density estimators. We will introduce the detailed methodology with its mathematical equation. With random data generation from univariate normal distribution, we will conduct one-shot experiment on these estimators.
 
 ## 2.1 Methodology
 
@@ -49,9 +49,6 @@ Thus, we defined a new function to proceed to the iteration above to obtain the 
 ```{r}
 # The implementation of the orthogonal series estimator, using Hermite series
 OS_Hermite <- function(x, data){
-  # The Hermite polynomials
-  # Utilize the recurrence formula "H_n(x) = 2x*H_(n-1)(x) - 2(n-1)*H_(n-2)(x) (n>=2)"
-  # to calculate the Hermite polynomials
   hermite <- function(x, m){
     if(m == 0){
       1
@@ -68,17 +65,17 @@ OS_Hermite <- function(x, data){
       c
     }
   }
-  # The normalized Hermite functions
+  #computing normalised Hermite functions
   phi <- function(x, m){
     (hermite(x, m)/exp((x^2)/2))/sqrt((2^m)*factorial(m)*sqrt(pi))
   }
   n <- length(data)
-  value = 0
+  val <- 0
   for(m in 0:30){
     c <- sum(sapply(data, phi, m = m))/n
-    value <- value + c*phi(x, m)
+    val <- val + c*phi(x, m)
   }
-  value
+  val
 }
 ```
 
@@ -107,36 +104,34 @@ n <- 1000
 set.seed(1)
 # The sample one
 sample1 <- rnorm(n, mean = 0, sd = 1)
-#The sample two
-sample2 <- rbeta(n, shape1 = 2, shape2 = 4)
+# #The sample two
+# sample2 <- rbeta(n, shape1 = 2, shape2 = 4)
 ```
 
-We generated two random distributions, normal distribution and beta distribution. For the first distribution, we randomly generated $X\sim N(0,1)$ with $1000$ samples. Then the second distribution takes $X\sim Beta(2,4)$ with $1000$ samples. These values are chosen on a random basis and we are generating the data in a random process with a fixed random seed.
+We randomly generated $X\sim N(0,1)$ with $1000$ samples. These values are chosen on a random basis and we are generating the data in a random process with a fixed random seed. Thus, we define the scenario as follow,
+$$X\sim N(0,1), \quad f(x)=\frac{1}{\sqrt{2\pi}}\exp(-\frac{x^2}{2})$$
 
 ## 2.3. One-shot Experiments 
 Now we proceed to one-shot experiment on two randomly generated distribution in the previous section. First of all, one-shot experiment is a pre-experimental design which performs the same algorithm on a single simulated data set. With the outcome, we can design a more sophisticated experiment in the later part and choose suitable hyperparameters for efficient and accurate computation.
 
-### 2.3.1. Normal Distribution
+### 2.3.1. Scenario : Normal Distribution
 
 ```{r fig.height=6.5, fig.width=12, fig.cap="One-shot Experiment on Normal distribution"}
 set.seed(1)
 # The density functions for the distributions of the simulated data
-# The density function for the distribution of sample one
+#density function for the normal distribution
 density1 <- function(x){
   mu <- 0; sigma <- 1
   exp(-(x - mu)^2/(2*sigma^2))/(sqrt(2*pi)*sigma)
 }
-# Create the visualizations to illustrate the performances of different density estimators
+#computing density plot for each estimator
 sample1.fit <- ssden( ~ sample1, domain = data.frame(sample1))
-# The visualization based on sample one
 xx <- seq(min(sample1), max(sample1), len = n)
-# pdf("Part1_fig1.pdf")
 hist(sample1, freq = FALSE, main = "",
      xlab = "X", ylab = "Density", xlim = c(-3, 3), ylim = c(0, 0.5))
 lines(density(sample1, from = min(sample1), to = max(sample1)), 
       col = "green", lwd = 1.6)
 lines(xx, density1(xx), type = "l", col = "black", lty = 2, lwd = 1.6)
-# axis(side = 1, at = seq(min(sample1), max(sample1), n))
 lines(xx, sapply(xx, OS_Hermite, data = sample1), col = "red", lwd = 1.6)
 lines(xx, dssden(sample1.fit, xx), type = "l", col = "orange", lwd = 1.6)
 legend(x = "topright", 
@@ -149,44 +144,50 @@ legend(x = "topright",
        lwd = 1.8, bty = "n")
 ```
 
-Let us look at Figure 1. The figure illustrates the true density (dotted line) with a histogram on the actual data set that we generated. Then we plotted 3 additional lines that represent each of the estimators. We can clearly observe that kernel density estimator (green) and penalised kernel density estimator (orange) are having similar shapes to the true density. However, penalised kernel density estimator resembles the true density line the most compared to others. For the kernel density estimator (green), the peak is slightly on the right side of the distribution. On the other hand, orthogonal series estimator (red) is shown to have a two hump and being less smoother compared to the rest. Overall, we can conclude that penalised kernel density estimator is the best among others in the one-shot experiment on normal distribution.
+Let us look at Figure 1. The figure illustrates the true density with a histogram on the actual data set that we generated. Then we plotted 3 additional lines that represent each of the estimators. We can clearly observe that kernel density estimator and penalised kernel density estimator are having similar shapes to the true density. However, penalised kernel density estimator resembles the true density line the most compared to others. For the kernel density estimator, the peak is slightly on the right side of the distribution. On the other hand, orthogonal series estimator (red) is shown to have a two hump and being less smoother compared to the rest. Overall, we can conclude that penalised kernel density estimator is the best among others in the one-shot experiment on normal distribution.
 
-### 2.3.2. Beta Distribution
+<!-- ### 2.3.2. Scenario 2 : Beta Distribution -->
 
-Similarly we performed one-shot experiment on the beta distribution that we generated in the previous part. Looking at Figure 2, we illustrated the true density (dotted line) with a histogram on the actual data set that we generated from. Then we plotted 3 additional lines that represent each of the estimators. By looking at the plot we can clearly observe all curves are smoothly plotted. The kernel density estimator (green) and penalised kernel density estimator (orange) both resembles the true density line. On the other hand, orthogonal series estimator (red) is shown to have the lowest peak with its peak centered on the right side and reasonably apart from the true density. Thus, for beta distribution we can conclude that kernel density estimator and penalised kernel density estimator work well. As we cannot distinguish the performance with beta distribution, we will move on to the Monte Carlo simulation to validate our experiment to discuss which estimators have the best performance.
+<!-- Looking at Figure 2, we illustrated the true density with a histogram on the actual data set that we generated from. Then we plotted 3 additional lines that represent each of the estimators. By looking at the plot we can clearly observe all curves are smoothly plotted. The kernel density estimator and penalised kernel density estimator both resembles the true density line. On the other hand, orthogonal series estimator is shown to have the lowest peak with its peak centered on the right side and reasonably apart from the true density. Thus, for beta distribution we can conclude that kernel density estimator and penalised kernel density estimator work well. As we cannot distinguish the performance with beta distribution, we will move on to the Monte Carlo simulation to validate our experiment to discuss which estimators have the best performance. -->
 
-```{r fig.height=6.5, fig.width=12, fig.cap="One-shot Experiment on Beta distribution"}
-# The visualization based on sample two
-# The density function for the distribution of sample two
-density2 <- function(x){
-  alpha <- 2; beta <- 4
-  x^(alpha - 1)*(1 - x)^(beta - 1)/beta(alpha, beta)
-}
-sample2.fit <- ssden( ~ sample2, domain = data.frame(sample2))
-xx <- seq(min(sample2), max(sample2), len = n)
-hist(sample2, freq = FALSE, main="",
-     xlab = "X", ylab = "Density", xlim = c(0, 0.8), ylim = c(0, 2.8))
-lines(density(sample2, from = min(sample2), to = max(sample2)), 
-      col = "green", lwd = 1.6)
-lines(xx, density2(xx), type = "l", col = "black", lty = 2, lwd = 1.6)
-# axis(side = 1, at = seq(min(sample2), max(sample2), n))
-lines(xx, sapply(xx, OS_Hermite, data = sample2), col = "red", lwd = 1.6)
-lines(xx, dssden(sample2.fit, xx), type = "l", col = "orange", lwd = 1.6)
-legend(x = "topright", 
-       legend = c("True Density", 
-                  "Kernel Density Estimator",
-                  "Orthogonal Series Estimator",
-                  "Penalised Kernal Density Estimator"),
-       lty = c(2, 1, 1, 1),
-       col = c("black", "green", "red", "orange"), 
-       lwd = 1.8, bty = "n")
-```
+<!-- # ```{r fig.height=6.5, fig.width=12, fig.cap="One-shot Experiment on Beta distribution"} -->
+<!-- # # The visualization based on sample two -->
+<!-- # # The density function for the distribution of sample two -->
+<!-- # density2 <- function(x){ -->
+<!-- #   alpha <- 2; beta <- 4 -->
+<!-- #   x^(alpha - 1)*(1 - x)^(beta - 1)/beta(alpha, beta) -->
+<!-- # } -->
+<!-- # sample2.fit <- ssden( ~ sample2, domain = data.frame(sample2)) -->
+<!-- # xx <- seq(min(sample2), max(sample2), len = n) -->
+<!-- # hist(sample2, freq = FALSE, main="", -->
+<!-- #      xlab = "X", ylab = "Density", xlim = c(0, 0.8), ylim = c(0, 2.8)) -->
+<!-- # lines(density(sample2, from = min(sample2), to = max(sample2)),  -->
+<!-- #       col = "green", lwd = 1.6) -->
+<!-- # lines(xx, density2(xx), type = "l", col = "black", lty = 2, lwd = 1.6) -->
+<!-- # # axis(side = 1, at = seq(min(sample2), max(sample2), n)) -->
+<!-- # lines(xx, sapply(xx, OS_Hermite, data = sample2), col = "red", lwd = 1.6) -->
+<!-- # lines(xx, dssden(sample2.fit, xx), type = "l", col = "orange", lwd = 1.6) -->
+<!-- # legend(x = "topright",  -->
+<!-- #        legend = c("True Density",  -->
+<!-- #                   "Kernel Density Estimator", -->
+<!-- #                   "Orthogonal Series Estimator", -->
+<!-- #                   "Penalised Kernal Density Estimator"), -->
+<!-- #        lty = c(2, 1, 1, 1), -->
+<!-- #        col = c("black", "green", "red", "orange"),  -->
+<!-- #        lwd = 1.8, bty = "n") -->
+<!-- # ``` -->
 
+## 2.4. Strength & Weakness
 
+### 2.4.1. Strength
+Now lets discuss the strength of each estimator. All three estimators are known to produce a smooth density estimates where it is evident in the plot above. The kernel weight $K$ is a unimodal probability density function that is symmetric, then the density estimate is guaranteed to be a density. Unlike the kernel density estimator methods, orthogonal series estimation does not keep the original data for evaluating the original data sets.
+
+### 2.4.2 Weakness
+Kernel density estimates, are influenced by the choice of kernel and bandwidth where a higher bandwidth result in shallow kernel which distant points can contribute. Thus, leading to biasness of the estimates near the boundaries.  Both kernel density estimates and penalised kernel density estimates are  nonparametric approaches which rely on the assumption that the function must be twice differentiable. Orthogonal series estimation takes longer time in convergence with larger sample size. It is also not useful when the distribution contains shape parameter as it cannot create the orthonormal base independently of the regressors. 
 
 # 3. Monte Carlo Simulation Study
 
-Now we move onto the Monte Carlo Simulation Study, where we repeat the one-shot experiment $R$ times, for different simulated dataset. This brings advantage in concluding with a solid result and logic. Thus, we simulate data $X_1,\dots,X_n\overset{\text{iid}}{\sim}f_{\theta}$, for a fixed $\theta\in\Theta$. Our goal in this section is to assess the performance of an estimator,
+Now we move onto the Monte Carlo Simulation Study, where we repeat the one-shot experiment $R$ times, for different simulated dataset. Thus, we simulate data $X_1,\dots,X_n\overset{\text{iid}}{\sim}f_{\theta}$, for a fixed $\theta\in\Theta$. Our goal in this section is to assess the performance of an estimator,
 $$
 \hat{\theta}_n=\hat{\theta}_n(X_1,\dots,X_n)
 $$
@@ -194,7 +195,8 @@ at recovering the true $\theta$, over $R$ simulated data sets. Hence, we repeate
 $$
 ISE = \int\{\hat{f}(x)-f(x)\}^2
 $$
-to compare the performances of each density estimator on different sample sizes. In addition, we computed the mean integrated squared error (MISE), and illustrated the results in figures below. Note that for the reproduceability, we fixed a random seed in all of our experiments.  
+to compare the performances of each density estimator on different sample sizes. In addition, we computed the mean integrated squared error (MISE), and illustrated the results in figures below. Note that for the reproduceability, we fixed a random seed in all of our experiments.
+
 ```{r}
 set.seed(1)
 # Initialize some variables
@@ -212,47 +214,47 @@ ise$third <- ise$first
 density_sam1 = function(x){
   exp(-(x - mu)^2/(2*sigma^2))/(sqrt(2*pi)*sigma)
 }
-# The Monte Carlo Simulation study for sample size n=250
+#Monte Carlo Simulation with sample size n=250
 for(i in 1:repeat.no){
   sample1 <- rnorm(n[1], mean = mu, sd = sigma)
   sample.fit <- ssden( ~ sample1, domain = data.frame(sample1))
-  # The calculation of the ISE for the kernel density estimator
+  #computing ISE for the kernel density estimator
   ker_den <- density(sample1)
   interval <- ker_den$x[-1] - ker_den$x[-length(ker_den$x)]
   xx <- (ker_den$x[-1] + ker_den$x[-length(ker_den$x)])/2
   yy <- (ker_den$y[-1] + ker_den$y[-length(ker_den$y)])/2
   ise$first$kernel[i] <- sum((yy - density_sam1(xx))^2*interval)
-  
-  # The calculation of the ISE for the penalised kernal density estimator
+  #computing ISE for the orthogonal series estimator
   ise$first$OS[i] <- integrate(function(x){
     (OS_Hermite(x, data = sample1) - density_sam1(x))^2},
     lower = min(sample1), upper = max(sample1))$value 
-  
+  #computing ISE for the penalised kernel density estimator
   ise$first$pkd[i] <- integrate(function(sample1){
     (dssden(sample.fit, sample1) - dnorm(sample1, mean = 0, sd = 1))^2}, 
     lower = min(sample1), upper = max(sample1))$value
 }
 
-# The Monte Carlo Simulation study for sample size n=500
+# The Monte Carlo Simulation with sample size n=500
 for(i in 1:repeat.no){
   sample1 <- rnorm(n[2], mean = mu, sd = sigma)
   sample.fit <- ssden( ~ sample1, domain = data.frame(sample1))
-  # The calculation of the ISE for the kernel density estimator
+  #computing ISE for the kernel density estimator
   ker_den <- density(sample1)
   interval <- ker_den$x[-1] - ker_den$x[-length(ker_den$x)]
   xx <- (ker_den$x[-1] + ker_den$x[-length(ker_den$x)])/2
   yy <- (ker_den$y[-1] + ker_den$y[-length(ker_den$y)])/2
   ise$second$kernel[i] <- sum((yy - density_sam1(xx))^2*interval)
-  # The calculation of the ISE for the penalised kernal density estimator
+  #computing ISE for the orthogonal series estimator
   ise$second$OS[i] = integrate(function(x){
     (OS_Hermite(x, data = sample1) - density_sam1(x))^2},
-    lower = min(sample1), upper = max(sample1))$value  
+    lower = min(sample1), upper = max(sample1))$value
+  #computing ISE for the penalised kernel density estimator
   ise$second$pkd[i] <- integrate(function(sample1){
     (dssden(sample.fit, sample1) - dnorm(sample1, mean = 0, sd = 1))^2}, 
     lower = min(sample1), upper = max(sample1))$value
 }
 
-# The Monte Carlo Simulation study for sample size n=1000
+#Monte Carlo Simulation with sample size n=1000
 for(i in 1:repeat.no){
   sample1 <- rnorm(n[3], mean = mu, sd = sigma)
   sample.fit <- ssden( ~ sample1, domain = data.frame(sample1))
@@ -272,19 +274,20 @@ for(i in 1:repeat.no){
 }
 ```
 
-Referring to Figure 3, we plotted the boxplots of three different estimators with different sample sizes. `kernel` stands for the kernel density estimator, `OS` stands for the orthogonal series estimator and `pkd` stands for the penalised kernel density estimator. Scrutinising its general trend, we can observe that the  `OS` has the largest quartile range and highest MISE values. We also observed that as the sample size, $n$ increases, we can see that the ISE values decrease as when $n=1000$ the ISE values are $10$ times less than $n=250$. Furthermore, penalised kernel density seems to show the shortest interquartile range for the ISE values and the lowest MISE among the others.  
+Referring to Figure 2, we plotted the boxplots of three different estimators with different sample sizes. `kernel` stands for the kernel density estimator, `OS` stands for the orthogonal series estimator and `pkd` stands for the penalised kernel density estimator. Scrutinising its general trend, we can observe that the  `OS` has the largest quartile range and highest MISE values. We also observed that as the sample size, $n$ increases, we can see that the ISE values decrease as when $n=1000$ the ISE values are $10$ times less than $n=250$. Furthermore, penalised kernel density seems to show the shortest interquartile range for the ISE values and the lowest MISE among the others.  
 
 ```{r fig.height=6, fig.width=12, fig.cap="Boxplot of Different Estimators with Different Sample Sizes"}
+#computing the boxplot
 par(mfrow=c(1,3))
 boxplot(ise$first, main = "n = 250")
 boxplot(ise$second, main = "n = 500")
 boxplot(ise$third, main = "n = 1000")
 ```
 
-Figure 4 further illustrates the MISE values of the three estimators where it solidifies that all estimators have lower MISE values with larger sample size and penalised kernel density estimator having the lowest MISE values. Therefore, if an accurate estimation of densities is required, a large sample size is a better choice.
+Figure 3 further illustrates the MISE values of the three estimators where it solidifies that all estimators have lower MISE values with larger sample size and penalised kernel density estimator having the lowest MISE values. Therefore, if an accurate estimation of densities is required, a large sample size is a better choice.
 
 ```{r fig.height=6.5, fig.width=12, fig.cap="Mean Integrated Squared Error with Different Sample Sizes"}
-# Calculate the mean of the ISE of all the density estimators
+#computing the MISE for each density estimator
 ise.mean <- data.frame(kernel = c(mean(ise$first$kernel),
                                  mean(ise$second$kernel),
                                  mean(ise$third$kernel)),
@@ -296,7 +299,7 @@ ise.mean <- data.frame(kernel = c(mean(ise$first$kernel),
                               mean(ise$third$pkd)),
                       row.names = c("first", "second", "third"))
 
-plot(ise.mean$kernel, type = "b", col = "green", ylim = c(0,0.008), 
+plot(ise.mean$kernel, type = "b", col = "green", ylim = c(0,0.009), 
      xaxt = "n", xlab = "sample size")
 axis(1, at = 1:3, labels = c(250, 500, 1000))
 lines(ise.mean$OS, type = "b", col = "red")
@@ -313,7 +316,9 @@ legend(x = "topright",
 
 # 4. Conclusion
 
-In conclusion, we conducted several experiments on three different density estimators. From one-shot experiment to Monte Carlo simulation study, Penalised kernel density estimator showed the best performance. Among kernel density estimator and orthogonal series estimator, penalised kernel density estimator had the lowest MISE and showed the best fit to the true values.
+In conclusion, we conducted experiments on three different density estimators. From one-shot experiment to Monte Carlo simulation study, penalised kernel density estimator showed the best performance. Among kernel density estimator and orthogonal series estimator, penalised kernel density estimator had the lowest MISE and showed the best fit to the true values. In the future, we aim to perform a comparison in finding the optimal bandwidth within the kernel density estimators to acquire the best estimates.
+
+\newpage
 
 # Reference
 
