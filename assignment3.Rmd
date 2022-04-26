@@ -12,7 +12,7 @@ output:
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = FALSE)
+knitr::opts_chunk$set(echo = TRUE)
 Sys.setlocale("LC_ALL", "English")
 library(tidyverse)
 library(gss)
@@ -23,7 +23,7 @@ library(gss)
 Density estimation is to form an estimate based on the original data of a probability density function which is popular in various fields including statistics and economics. In this report, we aim to investigate the performance of various density estimators and this report consists of two main parts. In the first part, we aim to perform one-shot experiment on kernel density estimator and compare against its other competitors such as orthogonal series estimator and penalised kernel density estimator. Hence, we will describe the preliminary experiment in the first part. In the second part, we will conduct a Monte Carlo simulation study for different sample sizes on the previously suggested methods. Thus, we will evaluate the integrated squared error (ISE) for different cases of sample sizes. Then we will end this report in the conclusion.
 
 # 2. Preliminary Experiment
-This section consists of the first part of the report where we conduct the preliminary experiments with 3 different density estimators. We will introduce the detailed methodology with its mathematical equation. With random data generation from univariate normal distribution, we will conduct one-shot experiment on these estimators.
+This section consists of the first part of the report where we conduct the preliminary experiments with 3 different density estimators. We will introduce the detailed methodology with its mathematical equation. With random data generation from univariate normal distribution and beta distribution, we will conduct one-shot experiment on these estimators.
 
 ## 2.1 Methodology
 
@@ -93,8 +93,7 @@ with $\beta_0=0$ and $\pmb{\beta} = \beta_{-m}, \dots, \beta_{-1}, \beta_1, \dot
 $$
 \hat{f}(x)=\frac{1}{m}\sum^{m}_{n=1}K\bigg(\frac{x-\mu_n}{h}\bigg)
 $$
-where $\mu_i$ is a hyperparameter known as knots being placed on an equally spaced locations on the domain of the dataset. 
-<!-- and introduced a package `gss`, (Gu, 2011)[3] which uses a penalised likelihood approach for nonparametric density estimation. With the functions `ssden()` and `dssden()`, we can estimate the kernel density. -->
+where $\mu_i$ is a hyperparameter known as knots being placed on an equally spaced locations on the domain of the dataset. (Gu, 2011)[5] introduced a package `gss` which uses a penalised likelihood approach for nonparametric density estimation. With the functions `ssden()` and `dssden()`, we can estimate the kernel density.
 
 ## 2.2. Data Generating Process
 
@@ -105,11 +104,16 @@ set.seed(1)
 # The sample one
 sample1 <- rnorm(n, mean = 0, sd = 1)
 # #The sample two
-# sample2 <- rbeta(n, shape1 = 2, shape2 = 4)
+sample2 <- rbeta(n, shape1 = 2, shape2 = 4)
 ```
 
-We randomly generated $X\sim N(0,1)$ with $1000$ samples. These values are chosen on a random basis and we are generating the data in a random process with a fixed random seed. Thus, we define the scenario as follow,
-$$X\sim N(0,1), \quad f(x)=\frac{1}{\sqrt{2\pi}}\exp(-\frac{x^2}{2})$$
+We randomly generated $X\sim N(0,1)$ with $1000$ samples. These values are chosen on a random basis and we are generating the data in a random process with a fixed random seed. Thus, we define the two scenarios as follow,
+
+\begin{itemize}
+  \item $X\sim N(0,1), \quad f(x)=\frac{1}{\sqrt{2\pi}}\exp(-\frac{x^2}{2})$
+  \item $X\sim Beta(2,4), \quad f(x)=\frac{\Gamma(6)x(1-x)^{3}}{\Gamma(2)\Gamma(4)}$
+\end{itemize}
+
 
 ## 2.3. One-shot Experiments 
 Now we proceed to one-shot experiment on two randomly generated distribution in the previous section. First of all, one-shot experiment is a pre-experimental design which performs the same algorithm on a single simulated data set. With the outcome, we can design a more sophisticated experiment in the later part and choose suitable hyperparameters for efficient and accurate computation.
@@ -146,36 +150,36 @@ legend(x = "topright",
 
 Let us look at Figure 1. The figure illustrates the true density with a histogram on the actual data set that we generated. Then we plotted 3 additional lines that represent each of the estimators. We can clearly observe that kernel density estimator and penalised kernel density estimator are having similar shapes to the true density. However, penalised kernel density estimator resembles the true density line the most compared to others. For the kernel density estimator, the peak is slightly on the right side of the distribution. On the other hand, orthogonal series estimator (red) is shown to have a two hump and being less smoother compared to the rest. Overall, we can conclude that penalised kernel density estimator is the best among others in the one-shot experiment on normal distribution.
 
-<!-- ### 2.3.2. Scenario 2 : Beta Distribution -->
+### 2.3.2. Scenario 2 : Beta Distribution
 
-<!-- Looking at Figure 2, we illustrated the true density with a histogram on the actual data set that we generated from. Then we plotted 3 additional lines that represent each of the estimators. By looking at the plot we can clearly observe all curves are smoothly plotted. The kernel density estimator and penalised kernel density estimator both resembles the true density line. On the other hand, orthogonal series estimator is shown to have the lowest peak with its peak centered on the right side and reasonably apart from the true density. Thus, for beta distribution we can conclude that kernel density estimator and penalised kernel density estimator work well. As we cannot distinguish the performance with beta distribution, we will move on to the Monte Carlo simulation to validate our experiment to discuss which estimators have the best performance. -->
+Looking at Figure 2, we illustrated the true density with a histogram on the actual data set that we generated from. Then we plotted 3 additional lines that represent each of the estimators. By looking at the plot we can clearly observe all curves are smoothly plotted. The kernel density estimator and penalised kernel density estimator both resembles the true density line. On the other hand, orthogonal series estimator is shown to have the lowest peak with its peak centered on the right side and reasonably apart from the true density. Thus, for beta distribution we can conclude that kernel density estimator and penalised kernel density estimator work well. As we cannot distinguish the performance with beta distribution, we will move on to the Monte Carlo simulation to validate our experiment to discuss which estimators have the best performance.
 
-<!-- # ```{r fig.height=6.5, fig.width=12, fig.cap="One-shot Experiment on Beta distribution"} -->
-<!-- # # The visualization based on sample two -->
-<!-- # # The density function for the distribution of sample two -->
-<!-- # density2 <- function(x){ -->
-<!-- #   alpha <- 2; beta <- 4 -->
-<!-- #   x^(alpha - 1)*(1 - x)^(beta - 1)/beta(alpha, beta) -->
-<!-- # } -->
-<!-- # sample2.fit <- ssden( ~ sample2, domain = data.frame(sample2)) -->
-<!-- # xx <- seq(min(sample2), max(sample2), len = n) -->
-<!-- # hist(sample2, freq = FALSE, main="", -->
-<!-- #      xlab = "X", ylab = "Density", xlim = c(0, 0.8), ylim = c(0, 2.8)) -->
-<!-- # lines(density(sample2, from = min(sample2), to = max(sample2)),  -->
-<!-- #       col = "green", lwd = 1.6) -->
-<!-- # lines(xx, density2(xx), type = "l", col = "black", lty = 2, lwd = 1.6) -->
-<!-- # # axis(side = 1, at = seq(min(sample2), max(sample2), n)) -->
-<!-- # lines(xx, sapply(xx, OS_Hermite, data = sample2), col = "red", lwd = 1.6) -->
-<!-- # lines(xx, dssden(sample2.fit, xx), type = "l", col = "orange", lwd = 1.6) -->
-<!-- # legend(x = "topright",  -->
-<!-- #        legend = c("True Density",  -->
-<!-- #                   "Kernel Density Estimator", -->
-<!-- #                   "Orthogonal Series Estimator", -->
-<!-- #                   "Penalised Kernal Density Estimator"), -->
-<!-- #        lty = c(2, 1, 1, 1), -->
-<!-- #        col = c("black", "green", "red", "orange"),  -->
-<!-- #        lwd = 1.8, bty = "n") -->
-<!-- # ``` -->
+```{r fig.height=6.5, fig.width=12, fig.cap="One-shot Experiment on Beta distribution"}
+# The visualization based on sample two
+# The density function for the distribution of sample two
+density2 <- function(x){
+  alpha <- 2; beta <- 4
+  x^(alpha - 1)*(1 - x)^(beta - 1)/beta(alpha, beta)
+}
+sample2.fit <- ssden( ~ sample2, domain = data.frame(sample2))
+xx <- seq(min(sample2), max(sample2), len = n)
+hist(sample2, freq = FALSE, main="",
+     xlab = "X", ylab = "Density", xlim = c(0, 0.8), ylim = c(0, 2.8))
+lines(density(sample2, from = min(sample2), to = max(sample2)),
+      col = "green", lwd = 1.6)
+lines(xx, density2(xx), type = "l", col = "black", lty = 2, lwd = 1.6)
+# axis(side = 1, at = seq(min(sample2), max(sample2), n))
+lines(xx, sapply(xx, OS_Hermite, data = sample2), col = "red", lwd = 1.6)
+lines(xx, dssden(sample2.fit, xx), type = "l", col = "orange", lwd = 1.6)
+legend(x = "topright",
+       legend = c("True Density",
+                  "Kernel Density Estimator",
+                  "Orthogonal Series Estimator",
+                  "Penalised Kernal Density Estimator"),
+       lty = c(2, 1, 1, 1),
+       col = c("black", "green", "red", "orange"),
+       lwd = 1.8, bty = "n")
+```
 
 ## 2.4. Strength & Weakness
 
@@ -183,7 +187,7 @@ Let us look at Figure 1. The figure illustrates the true density with a histogra
 Now lets discuss the strength of each estimator. All three estimators are known to produce a smooth density estimates where it is evident in the plot above. The kernel weight $K$ is a unimodal probability density function that is symmetric, then the density estimate is guaranteed to be a density. Unlike the kernel density estimator methods, orthogonal series estimation does not keep the original data for evaluating the original data sets.
 
 ### 2.4.2 Weakness
-Kernel density estimates, are influenced by the choice of kernel and bandwidth where a higher bandwidth result in shallow kernel which distant points can contribute. Thus, leading to biasness of the estimates near the boundaries.  Both kernel density estimates and penalised kernel density estimates are  nonparametric approaches which rely on the assumption that the function must be twice differentiable. Orthogonal series estimation takes longer time in convergence with larger sample size. It is also not useful when the distribution contains shape parameter as it cannot create the orthonormal base independently of the regressors. 
+Kernel density estimates, are influenced by the choice of kernels and bandwidth where a higher bandwidth result in shallow kernel which distant points can contribute. Thus, leading to biasness of the estimates near the boundaries.  Both kernel density estimates and penalised kernel density estimates are  nonparametric approaches which rely on the assumption that the function must be twice differentiable. Orthogonal series estimation takes longer time in convergence with larger sample size. It is also not useful when the distribution contains shape parameter as it cannot create the orthonormal base independently of the regressors. 
 
 # 3. Monte Carlo Simulation Study
 
@@ -318,18 +322,14 @@ legend(x = "topright",
 
 In conclusion, we conducted experiments on three different density estimators. From one-shot experiment to Monte Carlo simulation study, penalised kernel density estimator showed the best performance. Among kernel density estimator and orthogonal series estimator, penalised kernel density estimator had the lowest MISE and showed the best fit to the true values. In the future, we aim to perform a comparison in finding the optimal bandwidth within the kernel density estimators to acquire the best estimates.
 
-\newpage
-
 # Reference
 
 1. Deng, H. and Wickham, H., 2011. Density estimation in R. Electronic publication.
-
-<!-- 2. Girolami, M., 2002. Orthogonal series density estimation and the kernel eigenvalue problem. Neural computation, 14(3), pp.669-688 -->
-
-<!-- 3. Gu, C., 2011. Smoothing spline ANOVA models: R package gss. Journal of Statistical Software, 58, pp.1-25. -->
 
 2. Kauermann, G. and Schellhase, C., 2019. Density Estimation with a Penalized Mixture Approach.
 
 3. Kreyszig, E., 1991. Introductory functional analysis with applications (Vol. 17). John Wiley & Sons.
 
 4. Silverman, B.W., 2018. Density estimation for statistics and data analysis. Routledge.
+
+5. Gu, C., 2011. Smoothing spline ANOVA models: R package gss. Journal of Statistical Software, 58, pp.1-25.
